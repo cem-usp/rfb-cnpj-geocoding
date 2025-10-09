@@ -1,0 +1,149 @@
+[
+  {
+    "objectID": "index.html#overview",
+    "href": "index.html#overview",
+    "title": "",
+    "section": "Overview",
+    "text": "Overview\nThis report provides a fully reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)."
+  },
+  {
+    "objectID": "index.html#problem",
+    "href": "index.html#problem",
+    "title": "",
+    "section": "Problem",
+    "text": "Problem\nThe AcessoSAN project aims to develop methods for measuring and analyzing inequities in access to healthy food in favelas and other urban communities. Achieving this requires a reliable and up-to-date database of food retail establishments.\nThe Brazilian Federal Revenue Service (RFB) CNPJs database lists companies operating in Brazil, including food retail establishments. However, it does not provide geocoded information, which is required for spatial analyses. This pipeline addresses that gap by processing and geocoding the data."
+  },
+  {
+    "objectID": "index.html#data-availability",
+    "href": "index.html#data-availability",
+    "title": "",
+    "section": "Data Availability",
+    "text": "Data Availability\n\n\n\nThe processed data are available in both rds and csv formats through a dedicated repository on the Open Science Framework (OSF), accessible here. A metadata file is included alongside the validated datasets. You can also retrieve these files directly from R using the osfr package."
+  },
+  {
+    "objectID": "index.html#methods",
+    "href": "index.html#methods",
+    "title": "",
+    "section": "Methods",
+    "text": "Methods\nSource of Data\nThe data used in this report come from the following sources:\n\nBrazilian Federal Revenue Service (RFB): Data on food retail establishments from the CNPJ database, used for company identification.\nBrazilian Institute of Geography and Statistics (IBGE): Open spatial datasets of Brazilian addresses from the National Address Register for Statistical Purposes (CNEFE), used for geocoding via the geocodebr R package.\nData Munging\nThe data munging follow the data science workflow outlined by Wickham et al. (2023), as illustrated in Figure 1. All processes were made using the Quarto publishing system (Allaire et al., n.d.), the R programming language (R Core Team, n.d.) and several R packages.\nSpatial data processing was performed using the terra R package (Hijmans, n.d.) and the rspatial framework. For data manipulation and workflow, priority was given to packages from the tidyverse and rOpenSci ecosystems, as well as other packages adhering to the tidy tools manifesto (Wickham, 2023).\n\n\nFigure 1: Data science workflow created by Wickham, Çetinkaya-Runde, and Grolemund.\n\n\nSource: Reproduced from Wickham et al. (2023).\n\n\n\nCode Style\nThe Tidyverse code style guide and design principles were followed to ensure consistency and enhance readability.\nReproducibility\nThe pipeline is fully reproducible and can be run again at any time. To ensure consistent results, the renv package (Ushey & Wickham, n.d.) is used to manage and restore the R environment. See the README file in the code repository to learn how to run it."
+  },
+  {
+    "objectID": "index.html#set-the-environment",
+    "href": "index.html#set-the-environment",
+    "title": "",
+    "section": "Set the Environment",
+    "text": "Set the Environment\nLoad Packages\n\nlibrary(brandr)\nlibrary(beepr)\nlibrary(cli)\nlibrary(checkmate)\nlibrary(dplyr)\nlibrary(fs)\nlibrary(geocodebr)\nlibrary(ggplot2)\nlibrary(here)\nlibrary(htmltools)\nlibrary(magrittr)\nlibrary(osfr)\nlibrary(purrr)\nlibrary(readr)\nlibrary(rutils) # github.com/danielvartan/rutils\nlibrary(rvest)\nlibrary(stringr)\nlibrary(vroom)\nlibrary(zip)\n\nSet Functions\n\nmap_tibble &lt;- function(x, n_max = Inf) {\n  assert_character(x, any.missing = FALSE, min.len = 1)\n  assert_count(n_max, positive = TRUE)\n\n  x |&gt;\n    map(\n      \\(x) vroom(\n        file = x,\n        delim = \";\",\n        col_names = FALSE,\n        col_types = cols(.default = \"c\"),\n        n_max = n_max, # For testing.\n        progress = FALSE\n      ),\n      .progress = TRUE\n    ) |&gt;\n      list_rbind()\n}\n\nSet Initial Variables\n\nset.seed(2025)\n\n\nyear &lt;- 2025\n\n\nmonth &lt;- 1"
+  },
+  {
+    "objectID": "index.html#download-the-raw-data",
+    "href": "index.html#download-the-raw-data",
+    "title": "",
+    "section": "Download the Raw Data",
+    "text": "Download the Raw Data\nSet Parameters\n\nraw_data_dir &lt;- here(\"data-raw\")\n\n\nif (dir_exists(raw_data_dir)) dir_delete(raw_data_dir)\n\n\nif (!dir_exists(raw_data_dir)) dir_create(raw_data_dir, recurse = TRUE)\n\nDownload File\n\nroot &lt;- file.path( # Don´t change the function!\n    \"https://arquivos.receitafederal.gov.br\",\n    \"dados\",\n    \"cnpj\",\n    \"dados_abertos_cnpj\"\n  )\n\n\npath &lt;- root |&gt; file.path(paste0(\"2025-\", str_pad(month, 2, pad = 0)))\n\nurls &lt;-\n  path |&gt;\n  read_html() |&gt;\n  html_elements(\"a\") |&gt;\n  html_attr(\"href\") |&gt;\n  str_subset(\"\\\\.zip$\") %&gt;%\n  file.path(path, .)\n\n\nurls |&gt;\n  map_dbl(.f = get_file_size, .progress = TRUE) |&gt;\n  sum() |&gt;\n  as_fs_bytes()\n#&gt; 6.26G\n\n\nurls |&gt; download_file(dir = raw_data_dir)"
+  },
+  {
+    "objectID": "index.html#unzip-data",
+    "href": "index.html#unzip-data",
+    "title": "",
+    "section": "Unzip Data",
+    "text": "Unzip Data\n\nzip_files &lt;- raw_data_dir |&gt; dir_ls(type = \"file\", regexp = \"\\\\.zip$\")\n\n\nzip_files |&gt; map(\\(x) unzip(x, exdir = raw_data_dir), .progress = TRUE)\n\n\nzip_files |&gt; file_delete()"
+  },
+  {
+    "objectID": "index.html#read-the-data",
+    "href": "index.html#read-the-data",
+    "title": "",
+    "section": "Read the Data",
+    "text": "Read the Data\nSet Parameters\n\nn_max &lt;- 10 # For testing.\n\nCompanies\n\ncompany_data &lt;-\n  raw_data_dir |&gt;\n  dir_ls(type = \"file\", regexp = \"\\\\.EMPRECSV$\") |&gt;\n  map_tibble(n_max = n_max) |&gt;\n  rename_with(\n    \\(x) c(\n      \"cnpj_basic\",\n      \"company_name\",\n      \"legal_nature\",\n      \"responsible_qualification\",\n      \"company_share_capital\",\n      \"company_size\",\n      \"responsible_federal_entity\"\n    )\n  )\n\n\ncompany_data |&gt; glimpse()\n#&gt; Rows: 100\n#&gt; Columns: 7\n#&gt; $ cnpj_basic                 &lt;chr&gt; \"41273592\", \"41273593\", \"41273594\", \"412…\n#&gt; $ company_name               &lt;chr&gt; \"41.273.592 HELIO DE JESUS PEREIRA\", \"JU…\n#&gt; $ legal_nature               &lt;chr&gt; \"2135\", \"2135\", \"2135\", \"2135\", \"2135\", …\n#&gt; $ responsible_qualification  &lt;chr&gt; \"50\", \"50\", \"50\", \"50\", \"50\", \"50\", \"50\"…\n#&gt; $ company_share_capital      &lt;chr&gt; \"30000,00\", \"3000,00\", \"5000,00\", \"3000,…\n#&gt; $ company_size               &lt;chr&gt; \"01\", \"01\", \"01\", \"01\", \"01\", \"01\", \"01\"…\n#&gt; $ responsible_federal_entity &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …\n\nEstablishments\n\nestablishment_data &lt;-\n  raw_data_dir |&gt;\n  dir_ls(type = \"file\", regexp = \"\\\\.ESTABELE$\") |&gt;\n  map_tibble(n_max = n_max) |&gt;\n  rename_with(\n    \\(x) c(\n      \"cnpj_basic\",\n      \"cnpj_order\",\n      \"cnpj_dv\",\n      \"branch_identifier\",\n      \"trade_name\",\n      \"registration_status\",\n      \"registration_status_date\",\n      \"registration_status_reason\",\n      \"foreign_city_name\",\n      \"country\",\n      \"start_date\",\n      \"cnae_primary\",\n      \"cnae_secondary\",\n      \"street_type\",\n      \"street_name\",\n      \"number\",\n      \"address_complement\",\n      \"neighborhood\",\n      \"postal_code\",\n      \"federal_unit\",\n      \"municipality_tom\",\n      \"phone_area_code_1\",\n      \"phone_number_1\",\n      \"phone_area_code_2\",\n      \"phone_number_2\",\n      \"fax_area_code\",\n      \"fax_number\",\n      \"email\",\n      \"special_status\",\n      \"special_status_date\"\n    )\n  )\n\n\nestablishment_data |&gt; glimpse()\n#&gt; Rows: 100\n#&gt; Columns: 30\n#&gt; $ cnpj_basic                 &lt;chr&gt; \"37220018\", \"36068186\", \"37318263\", \"373…\n#&gt; $ cnpj_order                 &lt;chr&gt; \"0001\", \"0001\", \"0001\", \"0001\", \"0001\", …\n#&gt; $ cnpj_dv                    &lt;chr&gt; \"09\", \"68\", \"53\", \"25\", \"70\", \"98\", \"99\"…\n#&gt; $ branch_identifier          &lt;chr&gt; \"1\", \"1\", \"1\", \"1\", \"1\", \"1\", \"2\", \"1\", …\n#&gt; $ trade_name                 &lt;chr&gt; \"ANTONIO HERCULANO DA MOTA\", NA, NA, NA,…\n#&gt; $ registration_status        &lt;chr&gt; \"08\", \"02\", \"02\", \"08\", \"02\", \"04\", \"08\"…\n#&gt; $ registration_status_date   &lt;chr&gt; \"20230530\", \"20200120\", \"20200604\", \"202…\n#&gt; $ registration_status_reason &lt;chr&gt; \"01\", \"00\", \"00\", \"01\", \"00\", \"63\", \"01\"…\n#&gt; $ foreign_city_name          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …\n#&gt; $ country                    &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …\n#&gt; $ start_date                 &lt;chr&gt; \"20200525\", \"20200120\", \"20200604\", \"202…\n#&gt; $ cnae_primary               &lt;chr&gt; \"8712300\", \"4330499\", \"1629301\", \"522909…\n#&gt; $ cnae_secondary             &lt;chr&gt; NA, NA, \"3101200\", NA, \"4781400,8599604,…\n#&gt; $ street_type                &lt;chr&gt; \"RUA\", \"RUA\", \"RUA\", \"RUA\", \"RUA\", \"TRAV…\n#&gt; $ street_name                &lt;chr&gt; \"ARCO-IRIS\", \"JOSE PEREIRA MARQUES\", \"JO…\n#&gt; $ number                     &lt;chr&gt; \"97\", \"390\", \"568\", \"441\", \"201/19\", \"36…\n#&gt; $ address_complement         &lt;chr&gt; NA, NA, NA, \"CASA 03\", \"SALA 03\", NA, NA…\n#&gt; $ neighborhood               &lt;chr&gt; \"PARQUE BOTUJURU\", \"JARDIM COUNTRY CLUB\"…\n#&gt; $ postal_code                &lt;chr&gt; \"09821090\", \"37704313\", \"09920140\", \"097…\n#&gt; $ federal_unit               &lt;chr&gt; \"SP\", \"MG\", \"SP\", \"SP\", \"SP\", \"SP\", \"MG\"…\n#&gt; $ municipality_tom           &lt;chr&gt; \"7075\", \"5035\", \"6377\", \"7075\", \"7075\", …\n#&gt; $ phone_area_code_1          &lt;chr&gt; \"11\", \"35\", \"11\", \"11\", \"11\", \"11\", \"35\"…\n#&gt; $ phone_number_1             &lt;chr&gt; \"41014141\", \"99939878\", \"80594733\", \"433…\n#&gt; $ phone_area_code_2          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …\n#&gt; $ phone_number_2             &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …\n#&gt; $ fax_area_code              &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …\n#&gt; $ fax_number                 &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …\n#&gt; $ email                      &lt;chr&gt; \"HERCULANOANTONIO23@GMAIL.COM\", \"ALEVIDR…\n#&gt; $ special_status             &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …\n#&gt; $ special_status_date        &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …\n\nShareholders\n\nshareholder_data &lt;-\n  raw_data_dir |&gt;\n  dir_ls(type = \"file\", regexp = \"\\\\.SOCIOCSV$\") |&gt;\n  map_tibble(n_max = n_max) |&gt;\n  rename_with(\n    \\(x) c(\n      \"cnpj_basic\",\n      \"shareholder_identifier\",\n      \"shareholder_name\",\n      \"shareholder_cpf_cnpj\",\n      \"shareholder_qualification\",\n      \"entry_date_in_company\",\n      \"country\",\n      \"representative_cpf\",\n      \"representative_name\",\n      \"representative_qualification\",\n      \"age_range\"\n    )\n  )\n\n\nshareholder_data |&gt; glimpse()\n#&gt; Rows: 100\n#&gt; Columns: 11\n#&gt; $ cnpj_basic                   &lt;chr&gt; \"66011180\", \"66011180\", \"85061877\", \"8…\n#&gt; $ shareholder_identifier       &lt;chr&gt; \"2\", \"2\", \"2\", \"2\", \"2\", \"2\", \"2\", \"2\"…\n#&gt; $ shareholder_name             &lt;chr&gt; \"CLAUDIO RONDINI\", \"MARIA APARECIDA QU…\n#&gt; $ shareholder_cpf_cnpj         &lt;chr&gt; \"***887038**\", \"***933348**\", \"***5219…\n#&gt; $ shareholder_qualification    &lt;chr&gt; \"49\", \"22\", \"49\", \"22\", \"49\", \"22\", \"4…\n#&gt; $ entry_date_in_company        &lt;chr&gt; \"20011126\", \"20050618\", \"20060202\", \"2…\n#&gt; $ country                      &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…\n#&gt; $ representative_cpf           &lt;chr&gt; \"***000000**\", \"***000000**\", \"***0000…\n#&gt; $ representative_name          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…\n#&gt; $ representative_qualification &lt;chr&gt; \"00\", \"00\", \"00\", \"00\", \"00\", \"00\", \"0…\n#&gt; $ age_range                    &lt;chr&gt; \"8\", \"7\", \"4\", \"5\", \"5\", \"5\", \"8\", \"7\"…\n\nShareholder Qualifications\n\nshareholder_qualification_data &lt;-\n  raw_data_dir |&gt;\n  dir_ls(type = \"file\", regexp = \"\\\\.QUALSCSV$\") |&gt;\n  map_tibble(n_max = n_max) |&gt;\n  rename_with(\n    \\(x) c(\n      \"shareholder_qualification_code\",\n      \"shareholder_qualification\"\n    )\n  )\n\n\nshareholder_qualification_data |&gt; glimpse()\n#&gt; Rows: 10\n#&gt; Columns: 2\n#&gt; $ shareholder_qualification_code &lt;chr&gt; \"00\", \"05\", \"08\", \"09\", \"10\", \"11\", …\n#&gt; $ shareholder_qualification      &lt;chr&gt; \"N\\xe3o informada\", \"Administrador\",…\n\nCNAE\n\ncnae_data &lt;-\n  raw_data_dir |&gt;\n  dir_ls(type = \"file\", regexp = \"\\\\.CNAECSV$\") |&gt;\n  map_tibble(n_max = n_max) |&gt;\n  rename_with(\n    \\(x) c(\n    \"cnae_code\",\n    \"cnae_description\"\n    )\n  )\n\n\ncnae_data |&gt; glimpse()\n#&gt; Rows: 10\n#&gt; Columns: 2\n#&gt; $ cnae_code        &lt;chr&gt; \"0111301\", \"0111302\", \"0111303\", \"0111399\", \"01121…\n#&gt; $ cnae_description &lt;chr&gt; \"Cultivo de arroz\", \"Cultivo de milho\", \"Cultivo d…\n\nSimples\n\nsimples_data &lt;-\n  raw_data_dir |&gt;\n  dir_ls(type = \"file\", regexp = \"SIMPLES.CSV\") |&gt;\n  map_tibble(n_max = n_max) |&gt;\n  rename_with(\n    \\(x) c(\n      \"cnpj_basic\",\n      \"simples\",\n      \"simples_option_date\",\n      \"simples_exclusion_date\",\n      \"mei\",\n      \"mei_option_date\",\n      \"mei_exclusion_date\"\n    )\n  )\n\n\nsimples_data |&gt; glimpse()\n#&gt; Rows: 10\n#&gt; Columns: 7\n#&gt; $ cnpj_basic             &lt;chr&gt; \"00000000\", \"00000006\", \"00000008\", \"0000001…\n#&gt; $ simples                &lt;chr&gt; \"N\", \"N\", \"N\", \"S\", \"N\", \"N\", \"N\", \"S\", \"N\",…\n#&gt; $ simples_option_date    &lt;chr&gt; \"20070701\", \"20180101\", \"20140101\", \"2007070…\n#&gt; $ simples_exclusion_date &lt;chr&gt; \"20070701\", \"20191231\", \"20211231\", \"0000000…\n#&gt; $ mei                    &lt;chr&gt; \"N\", \"N\", \"N\", \"N\", \"N\", \"N\", \"N\", \"N\", \"N\",…\n#&gt; $ mei_option_date        &lt;chr&gt; \"20090701\", \"00000000\", \"00000000\", \"0000000…\n#&gt; $ mei_exclusion_date     &lt;chr&gt; \"20090701\", \"00000000\", \"00000000\", \"0000000…\n\nLegal Nature\n\nlegal_nature_data &lt;-\n  raw_data_dir |&gt;\n  dir_ls(type = \"file\", regexp = \"\\\\.NATJUCSV$\") |&gt;\n  map_tibble(n_max = n_max) |&gt;\n  rename_with(\n    \\(x) c(\n    \"legal_nature_code\",\n    \"legal_nature\"\n    )\n  )\n\n\nlegal_nature_data |&gt; glimpse()\n#&gt; Rows: 10\n#&gt; Columns: 2\n#&gt; $ legal_nature_code &lt;chr&gt; \"0000\", \"3271\", \"3280\", \"3298\", \"3301\", \"3999\", \"…\n#&gt; $ legal_nature      &lt;chr&gt; \"Natureza Jur\\xeddica n\\xe3o informada\", \"\\xd3rg\\…\n\nRegistration Status Reasons\n\nregistration_status_reason_data &lt;-\n  raw_data_dir |&gt;\n  dir_ls(type = \"file\", regexp = \"\\\\.MOTICSV$\") |&gt;\n  map_tibble(n_max = n_max) |&gt;\n  rename_with(\n    \\(x) c(\n    \"registration_status_reason_code\",\n    \"registration_status_reason\"\n    )\n  )\n\n\nregistration_status_reason_data |&gt; glimpse()\n#&gt; Rows: 10\n#&gt; Columns: 2\n#&gt; $ registration_status_reason_code &lt;chr&gt; \"00\", \"01\", \"02\", \"03\", \"04\", \"05\",…\n#&gt; $ registration_status_reason      &lt;chr&gt; \"SEM MOTIVO\", \"EXTINCAO POR ENCERRA…\n\nCountries\n\ncountries_data &lt;-\n  raw_data_dir |&gt;\n  dir_ls(type = \"file\", regexp = \"\\\\.PAISCSV$\") |&gt;\n  map_tibble(n_max = n_max) |&gt;\n  rename_with(\n    \\(x) c(\n    \"country_code\",\n    \"country\"\n    )\n  )\n\n\ncountries_data |&gt; glimpse()\n#&gt; Rows: 10\n#&gt; Columns: 2\n#&gt; $ country_code &lt;chr&gt; \"000\", \"013\", \"017\", \"020\", \"023\", \"025\", \"031\", \"037\"…\n#&gt; $ country      &lt;chr&gt; \"COLIS POSTAUX\", \"AFEGANISTAO\", \"ALBANIA\", \"ALBORAN-PE…\n\nMunicipalities\n\nmunicipalities_data &lt;-\n  raw_data_dir |&gt;\n  dir_ls(type = \"file\", regexp = \"\\\\.MUNICCSV$\") |&gt;\n  map_tibble(n_max = n_max) |&gt;\n  rename_with(\n    \\(x) c(\n    \"municipality_code\",\n    \"municipality\"\n    )\n  )\n\n\nmunicipalities_data |&gt; glimpse()\n#&gt; Rows: 10\n#&gt; Columns: 2\n#&gt; $ municipality_code &lt;chr&gt; \"0001\", \"0002\", \"0003\", \"0004\", \"0005\", \"0006\", \"…\n#&gt; $ municipality      &lt;chr&gt; \"GUAJARA-MIRIM\", \"ALTO ALEGRE DOS PARECIS\", \"PORT…"
+  },
+  {
+    "objectID": "index.html#filter-the-data",
+    "href": "index.html#filter-the-data",
+    "title": "",
+    "section": "Filter the Data",
+    "text": "Filter the Data"
+  },
+  {
+    "objectID": "index.html#tidy-the-data",
+    "href": "index.html#tidy-the-data",
+    "title": "",
+    "section": "Tidy the Data",
+    "text": "Tidy the Data"
+  },
+  {
+    "objectID": "index.html#transform-the-data",
+    "href": "index.html#transform-the-data",
+    "title": "",
+    "section": "Transform the Data",
+    "text": "Transform the Data"
+  },
+  {
+    "objectID": "index.html#validate-the-data",
+    "href": "index.html#validate-the-data",
+    "title": "",
+    "section": "Validate the Data",
+    "text": "Validate the Data"
+  },
+  {
+    "objectID": "index.html#arrange-the-data",
+    "href": "index.html#arrange-the-data",
+    "title": "",
+    "section": "Arrange the Data",
+    "text": "Arrange the Data"
+  },
+  {
+    "objectID": "index.html#geocode-the-data",
+    "href": "index.html#geocode-the-data",
+    "title": "",
+    "section": "Geocode the Data",
+    "text": "Geocode the Data"
+  },
+  {
+    "objectID": "index.html#data-dictionary",
+    "href": "index.html#data-dictionary",
+    "title": "",
+    "section": "Data Dictionary",
+    "text": "Data Dictionary"
+  },
+  {
+    "objectID": "index.html#save-the-valid-data",
+    "href": "index.html#save-the-valid-data",
+    "title": "",
+    "section": "Save the Valid Data",
+    "text": "Save the Valid Data"
+  },
+  {
+    "objectID": "index.html#visualize-the-data",
+    "href": "index.html#visualize-the-data",
+    "title": "",
+    "section": "Visualize the Data",
+    "text": "Visualize the Data"
+  },
+  {
+    "objectID": "index.html#citation",
+    "href": "index.html#citation",
+    "title": "",
+    "section": "Citation",
+    "text": "Citation\n\n\n\n\n\n\nWhen using this data, you must also cite the original data sources.\n\n\n\nTo cite this work, please use the following format:\nVartanian, D., Penz, C. L. S., Fernandes, C. N., & Giannotti, M. A. (2025). A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB) [Computer software]. Center for Metropolitan Studies of the University of São Paulo. https://cem-usp.github.io/rfb-cnpj-geocoding\nA BibTeX entry for LaTeX users is\n@software{vartanian2025,\n  title = {A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)},\n  author = {{Daniel Vartanian} and {Clara de Lima e Silva Penz} and {Camila Nastari Fernandes} and {Mariana Abrantes Giannotti}},\n  year = {2025},\n  address = {São Paulo},\n  institution = {Center for Metropolitan Studies of the University of São Paulo},\n  langid = {en},\n  url = {https://cem-usp.github.io/rfb-cnpj-geocoding}\n}"
+  },
+  {
+    "objectID": "index.html#license",
+    "href": "index.html#license",
+    "title": "",
+    "section": "License",
+    "text": "License\n\n \n\n\n\n\n\n\n\nThe original data sources may have their own license terms and conditions.\n\n\n\nThe code in this report is licensed under the GNU General Public License Version 3, while the report is available under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International.\nCopyright (C) 2025 Daniel Vartanian\n\nThe code in this report is free software: you can redistribute it and/or\nmodify it under the terms of the GNU General Public License as published by the\nFree Software Foundation, either version 3 of the License, or (at your option)\nany later version.\n\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY\nWARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A\nPARTICULAR PURPOSE. See the GNU General Public License for more details.\n\nYou should have received a copy of the GNU General Public License along with\nthis program. If not, see &lt;https://www.gnu.org/licenses/&gt;."
+  },
+  {
+    "objectID": "index.html#acknowledgments",
+    "href": "index.html#acknowledgments",
+    "title": "",
+    "section": "Acknowledgments",
+    "text": "Acknowledgments\n\n\n\n\n\nThis work is part of a research project by the Polytechnic School (Poli) of the University of São Paulo (USP), in partnership with the Secretariat for Food and Nutrition Security (SESAN) of the Ministry of Social Development, Family, and the Fight Against Hunger (MDS), titled: AcessoSAN: Mapping Food Access to Support Public Policies on Food and Nutrition Security and Hunger Reduction in Brazilian Cities.\n\n\n\n\n\n\nThis work was developed with support from the Center for Metropolitan Studies (CEM) based at the School of Philosophy, Letters and Human Sciences (FFLCH) of the University of São Paulo (USP) and at the Brazilian Center for Analysis and Planning (CEBRAP).\n\n\n\n\n\n\nThis study was financed, in part, by the São Paulo Research Foundation (FAPESP), Brazil. Process Number 2025/17879-2."
+  },
+  {
+    "objectID": "index.html#references",
+    "href": "index.html#references",
+    "title": "",
+    "section": "References",
+    "text": "References\n\n\nAllaire, J. J., Teague, C., Xie, Y., & Dervieux, C. (n.d.). Quarto [Computer software]. Zenodo. https://doi.org/10.5281/ZENODO.5960048\n\n\nHijmans, R. J. (n.d.). terra: Spatial Data Analysis [Computer software]. https://rspatial.org\n\n\nR Core Team. (n.d.). R: A language and environment for statistical computing [Computer software]. R Foundation for Statistical Computing. https://www.R-project.org\n\n\nUshey, K., & Wickham, H. (n.d.). renv: Project environments [Computer software]. https://doi.org/10.32614/CRAN.package.renv\n\n\nWickham, H. (2023). The tidy tools manifesto. Tidyverse. https://tidyverse.tidyverse.org/articles/manifesto.html\n\n\nWickham, H., Çetinkaya-Rundel, M., & Grolemund, G. (2023). R for data science: Import, tidy, transform, visualize, and model data (2nd ed.). O’Reilly Media. https://r4ds.hadley.nz"
+  }
+]

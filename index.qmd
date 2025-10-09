@@ -1,0 +1,608 @@
+```{r}
+#| label: setup
+#| include: false
+
+library(here)
+
+source(here("R", "_setup.R"))
+```
+
+<!-- badges: start -->
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![License: GPLv3](https://img.shields.io/badge/license-GPLv3-bd0000.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+<!-- badges: end -->
+
+::: {.callout-important}
+This pipeline is a **Work In Progress** (WIP) and is under active development. It may not yet be stable or suitable for public use. Please use it with caution and report any issues you encounter.
+:::
+
+## Overview
+
+This report provides a fully reproducible pipeline for processing and [geocoding](https://en.wikipedia.org/wiki/Address_geocoding) [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s from the Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)).
+
+## Problem
+
+The [AcessoSAN](https://doi.org/10.17605/OSF.IO/ZE6WT) project aims to develop methods for measuring and analyzing inequities in access to healthy food in favelas and other urban communities. Achieving this requires a reliable and up-to-date database of food retail establishments.
+
+The Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)) [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s database lists companies operating in Brazil, including food retail establishments. However, it does not provide [geocoded information](https://en.wikipedia.org/wiki/Address_geocoding), which is required for spatial analyses. This pipeline addresses that gap by processing and [geocoding](https://en.wikipedia.org/wiki/Address_geocoding) the data.
+
+## Data Availability
+
+::: {style="text-align: left;"}
+[![](https://img.shields.io/badge/OSF-10.17605/OSF.IO/2X6JB-1284C5.svg)](https://doi.org/10.17605/OSF.IO/2X6JB)
+:::
+
+The processed data are available in both [`rds`](https://rdrr.io/r/base/readRDS.html) and [`csv`](https://en.wikipedia.org/wiki/Comma-separated_values) formats through a dedicated repository on the Open Science Framework ([OSF](https://osf.io/)), accessible [here](https://doi.org/10.17605/OSF.IO/2X6JB). A metadata file is included alongside the validated datasets. You can also retrieve these files directly from [R](https://www.r-project.org/) using the [`osfr`](https://docs.ropensci.org/osfr/) package.
+
+## Methods
+
+### Source of Data
+
+The data used in this report come from the following sources:
+
+- Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)): Data on food retail establishments from the [CNPJ database](https://dados.gov.br/dados/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj), used for company identification.
+- Brazilian Institute of Geography and Statistics ([IBGE](https://www.ibge.gov.br/)): Open spatial datasets of Brazilian addresses from the National Address Register for Statistical Purposes ([CNEFE](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)), used for geocoding via the [`geocodebr`](https://ipeagit.github.io/geocodebr/) R package.
+
+### Data Munging
+
+The data munging follow the data science workflow outlined by @wickham2023e, as illustrated in [@fig-wickham-at-al-2023-figure-1]. All processes were made using the [Quarto](https://quarto.org/) publishing system [@allaire], the [R programming language](https://www.r-project.org/) [@rcoreteama] and several R packages.
+
+Spatial data processing was performed using the [`terra`](https://rspatial.github.io/terra/reference/terra-package.html) R package [@hijmans] and the [rspatial](https://rspatial.org/) framework. For data manipulation and workflow, priority was given to packages from the [tidyverse](https://www.tidyverse.org/) and [rOpenSci](https://ropensci.org/) ecosystems, as well as other packages adhering to the tidy tools manifesto [@wickham2023c].
+
+::: {#fig-wickham-at-al-2023-figure-1}
+![](images/wickham-at-al-2023-figure-1.png){width=75%}
+
+[Source: Reproduced from @wickham2023e.]{.legend}
+
+Data science workflow created by Wickham, Çetinkaya-Runde, and Grolemund.
+:::
+
+### Code Style
+
+The Tidyverse [code style guide](https://style.tidyverse.org/) and [design principles](https://design.tidyverse.org/) were followed to ensure consistency and enhance readability.
+
+### Reproducibility
+
+The pipeline is fully reproducible and can be run again at any time. To ensure consistent results, the [`renv`](https://rstudio.github.io/renv/) package [@usheya] is used to manage and restore the R environment. See the [README](https://github.com/cem-usp/rfb-cnpj-geocoding/blob/main/README.md) file in the code repository to learn how to run it.
+
+## Set the Environment
+
+### Load Packages
+
+```{r}
+#| code-fold: false
+#| output: false
+
+library(brandr)
+library(beepr)
+library(cli)
+library(checkmate)
+library(dplyr)
+library(fs)
+library(geocodebr)
+library(ggplot2)
+library(here)
+library(htmltools)
+library(magrittr)
+library(osfr)
+library(purrr)
+library(readr)
+library(rutils) # github.com/danielvartan/rutils
+library(rvest)
+library(stringr)
+library(vroom)
+library(zip)
+```
+
+### Set Functions
+
+```{r}
+map_tibble <- function(x, n_max = Inf) {
+  assert_character(x, any.missing = FALSE, min.len = 1)
+  assert_count(n_max, positive = TRUE)
+
+  x |>
+    map(
+      \(x) vroom(
+        file = x,
+        delim = ";",
+        col_names = FALSE,
+        col_types = cols(.default = "c"),
+        n_max = n_max, # For testing.
+        progress = FALSE
+      ),
+      .progress = TRUE
+    ) |>
+      list_rbind()
+}
+```
+
+### Set Initial Variables
+
+```{r}
+set.seed(2025)
+```
+
+```{r}
+year <- 2025
+```
+
+```{r}
+month <- 1
+```
+
+## Download the Raw Data
+
+### Set Parameters
+
+```{r}
+raw_data_dir <- here("data-raw")
+```
+
+```{r}
+#| eval: false
+
+if (dir_exists(raw_data_dir)) dir_delete(raw_data_dir)
+```
+
+```{r}
+if (!dir_exists(raw_data_dir)) dir_create(raw_data_dir, recurse = TRUE)
+```
+
+### Download File
+
+```{r}
+root <- file.path( # Don´t change the function!
+    "https://arquivos.receitafederal.gov.br",
+    "dados",
+    "cnpj",
+    "dados_abertos_cnpj"
+  )
+```
+
+```{r}
+path <- root |> file.path(paste0("2025-", str_pad(month, 2, pad = 0)))
+
+urls <-
+  path |>
+  read_html() |>
+  html_elements("a") |>
+  html_attr("href") |>
+  str_subset("\\.zip$") %>%
+  file.path(path, .)
+```
+
+```{r}
+urls |>
+  map_dbl(.f = get_file_size, .progress = TRUE) |>
+  sum() |>
+  as_fs_bytes()
+```
+
+```{r}
+#| eval: false
+
+urls |> download_file(dir = raw_data_dir)
+```
+
+```{r}
+#| include: false
+
+# beep()
+```
+
+## Unzip Data
+
+```{r}
+#| eval: false
+
+zip_files <- raw_data_dir |> dir_ls(type = "file", regexp = "\\.zip$")
+```
+
+```{r}
+#| eval: false
+#| output: false
+
+zip_files |> map(\(x) unzip(x, exdir = raw_data_dir), .progress = TRUE)
+```
+
+```{r}
+#| eval: false
+
+zip_files |> file_delete()
+```
+
+## Read the Data
+
+### Set Parameters
+
+```{r}
+n_max <- 10 # For testing.
+```
+
+### Companies
+
+```{r}
+company_data <-
+  raw_data_dir |>
+  dir_ls(type = "file", regexp = "\\.EMPRECSV$") |>
+  map_tibble(n_max = n_max) |>
+  rename_with(
+    \(x) c(
+      "cnpj_basic",
+      "company_name",
+      "legal_nature",
+      "responsible_qualification",
+      "company_share_capital",
+      "company_size",
+      "responsible_federal_entity"
+    )
+  )
+```
+
+```{r}
+company_data |> glimpse()
+```
+
+### Establishments
+
+```{r}
+establishment_data <-
+  raw_data_dir |>
+  dir_ls(type = "file", regexp = "\\.ESTABELE$") |>
+  map_tibble(n_max = n_max) |>
+  rename_with(
+    \(x) c(
+      "cnpj_basic",
+      "cnpj_order",
+      "cnpj_dv",
+      "branch_identifier",
+      "trade_name",
+      "registration_status",
+      "registration_status_date",
+      "registration_status_reason",
+      "foreign_city_name",
+      "country",
+      "start_date",
+      "cnae_primary",
+      "cnae_secondary",
+      "street_type",
+      "street_name",
+      "number",
+      "address_complement",
+      "neighborhood",
+      "postal_code",
+      "federal_unit",
+      "municipality_tom",
+      "phone_area_code_1",
+      "phone_number_1",
+      "phone_area_code_2",
+      "phone_number_2",
+      "fax_area_code",
+      "fax_number",
+      "email",
+      "special_status",
+      "special_status_date"
+    )
+  )
+```
+
+```{r}
+establishment_data |> glimpse()
+```
+
+### Shareholders
+
+```{r}
+shareholder_data <-
+  raw_data_dir |>
+  dir_ls(type = "file", regexp = "\\.SOCIOCSV$") |>
+  map_tibble(n_max = n_max) |>
+  rename_with(
+    \(x) c(
+      "cnpj_basic",
+      "shareholder_identifier",
+      "shareholder_name",
+      "shareholder_cpf_cnpj",
+      "shareholder_qualification",
+      "entry_date_in_company",
+      "country",
+      "representative_cpf",
+      "representative_name",
+      "representative_qualification",
+      "age_range"
+    )
+  )
+```
+
+```{r}
+shareholder_data |> glimpse()
+```
+
+### Shareholder Qualifications
+
+```{r}
+shareholder_qualification_data <-
+  raw_data_dir |>
+  dir_ls(type = "file", regexp = "\\.QUALSCSV$") |>
+  map_tibble(n_max = n_max) |>
+  rename_with(
+    \(x) c(
+      "shareholder_qualification_code",
+      "shareholder_qualification"
+    )
+  )
+```
+
+```{r}
+shareholder_qualification_data |> glimpse()
+```
+
+### CNAE
+
+```{r}
+cnae_data <-
+  raw_data_dir |>
+  dir_ls(type = "file", regexp = "\\.CNAECSV$") |>
+  map_tibble(n_max = n_max) |>
+  rename_with(
+    \(x) c(
+    "cnae_code",
+    "cnae_description"
+    )
+  )
+```
+
+```{r}
+cnae_data |> glimpse()
+```
+
+### Simples
+
+```{r}
+simples_data <-
+  raw_data_dir |>
+  dir_ls(type = "file", regexp = "SIMPLES.CSV") |>
+  map_tibble(n_max = n_max) |>
+  rename_with(
+    \(x) c(
+      "cnpj_basic",
+      "simples",
+      "simples_option_date",
+      "simples_exclusion_date",
+      "mei",
+      "mei_option_date",
+      "mei_exclusion_date"
+    )
+  )
+```
+
+```{r}
+simples_data |> glimpse()
+```
+
+### Legal Nature
+
+```{r}
+legal_nature_data <-
+  raw_data_dir |>
+  dir_ls(type = "file", regexp = "\\.NATJUCSV$") |>
+  map_tibble(n_max = n_max) |>
+  rename_with(
+    \(x) c(
+    "legal_nature_code",
+    "legal_nature"
+    )
+  )
+```
+
+```{r}
+legal_nature_data |> glimpse()
+```
+
+### Registration Status Reasons
+
+```{r}
+registration_status_reason_data <-
+  raw_data_dir |>
+  dir_ls(type = "file", regexp = "\\.MOTICSV$") |>
+  map_tibble(n_max = n_max) |>
+  rename_with(
+    \(x) c(
+    "registration_status_reason_code",
+    "registration_status_reason"
+    )
+  )
+```
+
+```{r}
+registration_status_reason_data |> glimpse()
+```
+
+### Countries
+
+```{r}
+countries_data <-
+  raw_data_dir |>
+  dir_ls(type = "file", regexp = "\\.PAISCSV$") |>
+  map_tibble(n_max = n_max) |>
+  rename_with(
+    \(x) c(
+    "country_code",
+    "country"
+    )
+  )
+```
+
+```{r}
+countries_data |> glimpse()
+```
+
+### Municipalities
+
+```{r}
+municipalities_data <-
+  raw_data_dir |>
+  dir_ls(type = "file", regexp = "\\.MUNICCSV$") |>
+  map_tibble(n_max = n_max) |>
+  rename_with(
+    \(x) c(
+    "municipality_code",
+    "municipality"
+    )
+  )
+```
+
+```{r}
+municipalities_data |> glimpse()
+```
+
+## Filter the Data
+
+## Tidy the Data
+
+## Transform the Data
+
+## Validate the Data
+
+## Arrange the Data
+
+## Geocode the Data
+
+## Data Dictionary
+
+## Save the Valid Data
+
+## Visualize the Data
+
+## Citation
+
+::: {.callout-important}
+When using this data, you must also cite the original data sources.
+:::
+
+To cite this work, please use the following format:
+
+Vartanian, D., Penz, C. L. S., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/rfb-cnpj-geocoding>
+
+A BibTeX entry for LaTeX users is
+
+```latex
+@software{vartanian2025,
+  title = {A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)},
+  author = {{Daniel Vartanian} and {Clara de Lima e Silva Penz} and {Camila Nastari Fernandes} and {Mariana Abrantes Giannotti}},
+  year = {2025},
+  address = {São Paulo},
+  institution = {Center for Metropolitan Studies of the University of São Paulo},
+  langid = {en},
+  url = {https://cem-usp.github.io/rfb-cnpj-geocoding}
+}
+```
+
+## License
+
+::: {style="text-align: left;"}
+[![License: GPLv3](https://img.shields.io/badge/license-GPLv3-bd0000.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+:::
+
+::: {.callout-important}
+The original data sources may have their own license terms and conditions.
+:::
+
+The code in this report is licensed under the [GNU General Public License Version 3](https://www.gnu.org/licenses/gpl-3.0), while the report is available under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+``` text
+Copyright (C) 2025 Daniel Vartanian
+
+The code in this report is free software: you can redistribute it and/or
+modify it under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your option)
+any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <https://www.gnu.org/licenses/>.
+```
+
+## Acknowledgments
+
+```{r, results='asis'}
+#| eval: true
+#| echo: false
+
+blocks <- list(
+  list(
+    logo_link = "https://doi.org/10.17605/OSF.IO/ZE6WT",
+    logo_src = "images/acessosan-logo.svg",
+    logo_alt = "AcessoSAN Logo",
+    logo_width = 140,
+    text = 'This work is part of a research project by the Polytechnic School (<a href="https://www.poli.usp.br/">Poli</a>) of the University of São Paulo (<a href="https://usp.br/">USP</a>), in partnership with the Secretariat for Food and Nutrition Security (<a href="https://www.gov.br/mds/pt-br/orgaos/SESAN">SESAN</a>) of the Ministry of Social Development, Family, and the Fight Against Hunger (<a href="https://www.gov.br/mds/">MDS</a>), titled: <em>AcessoSAN: Mapping Food Access to Support Public Policies on Food and Nutrition Security and Hunger Reduction in Brazilian Cities</em>.'
+  ),
+  list(
+    logo_link = "https://centrodametropole.fflch.usp.br",
+    logo_src = "images/cem-icon.svg",
+    logo_alt = "CEM Logo",
+    logo_width = 190,
+    text = 'This work was developed with support from the Center for Metropolitan Studies (<a href="https://centrodametropole.fflch.usp.br">CEM</a>) based at the School of Philosophy, Letters and Human Sciences (<a href="https://www.fflch.usp.br/">FFLCH</a>) of the University of São Paulo (<a href="https://usp.br">USP</a>) and at the Brazilian Center for Analysis and Planning (<a href="https://cebrap.org.br/">CEBRAP</a>).'
+  ),
+  list(
+    logo_link = "https://fapesp.br/",
+    logo_src = "images/fapesp-logo.svg",
+    logo_alt = "FAPESP Logo",
+    logo_width = 160,
+    text = 'This study was financed, in part, by the São Paulo Research Foundation (<a href="https://fapesp.br/">FAPESP</a>), Brazil. Process Number <a href="https://bv.fapesp.br/en/bolsas/231507/geospatial-data-science-applied-to-food-policies/">2025/17879-2</a>.'
+  )
+)
+
+blocks |>
+  lapply(
+    function(x) {
+      div(
+        style = paste0(
+          "display: flex; ",
+          "align-items: flex-start; ",
+          "margin-bottom: 2em;"
+        ),
+        div(
+          style = paste0(
+            "flex: 0 0 30%; ",
+            "display: flex; ",
+            "justify-content: center; ",
+            "margin: auto 0;"
+          ),
+          tags$a(
+            href = x$logo_link,
+            tags$img(
+              src = x$logo_src,
+              alt = x$logo_alt,
+              style = paste0(
+                "max-width: ", x$logo_width, "px; ",
+                "width: 100%; ",
+                "height: auto;"
+              )
+            )
+          )
+        ),
+        div(
+          style = paste0(
+            "flex: 1; ",
+            "padding-left: 1em;"
+          ),
+          HTML(x$text)
+        )
+      )
+    }
+  ) |>
+  tagList() |>
+  browsable()
+```
+
+## References {.unnumbered}
+
+::: {#refs}
+:::
