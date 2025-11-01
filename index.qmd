@@ -170,12 +170,12 @@ month <- 1
 ```{r}
 municipalities <- c( # IBGE Codes
   3550308 # , # São Paulo
-  # 2507507, # João Pessoa
-  # 3106200, # Belo Horizonte
-  # 4314902, # Porto Alegre
-  # 1721000, # Palmas
-  # 5300108, # Brasília
-  # 5208707  # Goiânia
+  2507507, # João Pessoa
+  3106200, # Belo Horizonte
+  4314902, # Porto Alegre
+  1721000, # Palmas
+  5300108, # Brasília
+  5208707  # Goiânia
 )
 ```
 
@@ -366,6 +366,8 @@ establishment_data <-
             '$6 == "', '\\"02\\"', '"',
             " && ",
             paste0('$21 == "\\"', municipalities, '\\""', collapse = " || "),
+            " && ",
+            '$29 == "', '\\"\\"', '"',
             ") ",
             "print",
             " }' ",
@@ -651,7 +653,6 @@ ggplot() +
     data = plot_data,
     mapping = aes(x = longitude, y = latitude, color = group),
     size = 0.01
-    # color = get_brand_color("blue")
   ) +
   facet_wrap(~ group, ncol = 4) +
   coord_sf(crs = 4326) +
