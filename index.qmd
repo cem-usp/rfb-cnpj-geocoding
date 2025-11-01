@@ -638,6 +638,8 @@ plot_data |> glimpse()
 
 ```{r}
 #| label: Test Plot
+#| fig-width: 10
+#| fig-height: 4
 
 ggplot() +
   geom_sf(
