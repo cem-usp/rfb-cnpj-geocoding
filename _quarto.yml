@@ -13,7 +13,7 @@ project:
 title: >
   A Reproducible Pipeline for Processing and Geocoding CNPJs from the Brazilian
   Federal Revenue Service (RFB)
-author: Daniel Vartanian, Clara L. S. Penz, Camila N. Fernandes, & Mariana A. Giannotti
+author: "Daniel Vartanian, Clara L. S. Penz, Gabriel Caldeira, Camila N. Fernandes, & Mariana A. Giannotti"
 keyword: >
   Pipelines, rstats, Data Munging, Data Science, Open Data, Open Science,
   Spatial Data, Geocoding, CNPJ, Brazilian Federal Revenue Service, RFB,

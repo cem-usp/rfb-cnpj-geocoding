@@ -1,17 +1,17 @@
 # rfb-cnpj-geocoding
 
 <!-- badges: start -->
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
-[![](https://img.shields.io/badge/OSF-10.17605/OSF.IO/2X6JB-1284C5.svg)](https://doi.org/10.17605/OSF.IO/2X6JB)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-bd0000.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 <!-- badges: end -->
 
 ## Overview
 
-This repository provides a fully reproducible pipeline for processing and [geocoding](https://en.wikipedia.org/wiki/Address_geocoding) [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s from the Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)).
+This repository provides a reproducible pipeline for processing, [geocoding](https://en.wikipedia.org/wiki/Address_geocoding), and classifying [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s from the Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)) using the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) scale.
 
-The pipeline report is available [here](https://cem-usp.github.io/rfb-cnpj-geocoding/).
+
+The report is available [here](https://cem-usp.github.io/rfb-cnpj-geocoding/).
 
 > If you find this project useful, please consider giving it a star! [![GitHub repo stars](https://img.shields.io/github/stars/cem-usp/logo-pattern)](https://github.com/cem-usp/rfb-cnpj-geocoding/)
 
@@ -19,11 +19,15 @@ The pipeline report is available [here](https://cem-usp.github.io/rfb-cnpj-geoco
 
 [![OSF DOI](https://img.shields.io/badge/OSF-10.17605/OSF.IO/2X6JB-1284C5.svg)](https://doi.org/10.17605/OSF.IO/2X6JB)
 
-The processed data are available in both [`rds`](https://rdrr.io/r/base/readRDS.html) and [`csv`](https://en.wikipedia.org/wiki/Comma-separated_values) formats through a dedicated repository on the Open Science Framework ([OSF](https://osf.io/)), accessible [here](https://doi.org/10.17605/OSF.IO/2X6JB). A metadata file is included alongside the validated datasets. You can also retrieve these files directly from [R](https://www.r-project.org/) using the [`osfr`](https://docs.ropensci.org/osfr/) package.
+The processed data are available in [`csv`](https://en.wikipedia.org/wiki/Comma-separated_values), [`rds`](https://rdrr.io/r/base/readRDS.html) and [`parquet`](https://en.wikipedia.org/wiki/Apache_Parquet) formats through a dedicated repository on the Open Science Framework ([OSF](https://osf.io/)). A metadata file is included alongside the validated datasets.
+
+Because the classification table are not publicly available, only authorized personnel can access the processed files. They are protected with [RSA](https://en.wikipedia.org/wiki/RSA_cryptosystem) 4096-bit encryption ([OpenSSL](https://www.openssl.org/)) and a 32-byte password to ensure data security.
+
+If you already have access to the OSF repository and the project keys, click [here](https://doi.org/10.17605/OSF.IO/2X6JB) to access the data. You can also retrieve these files directly from [R](https://www.r-project.org/) using the [`osfr`](https://docs.ropensci.org/osfr/) package.
 
 ## Usage
 
-The pipeline was developed using the [Quarto](https://quarto.org/) publishing system, the [R](https://www.r-project.org/) and [AWK](https://en.wikipedia.org/wiki/AWK) programming languages. To ensure consistent results, the [`renv`](https://rstudio.github.io/renv/) package is used to manage and restore the R environment.
+The pipeline was developed using the [Quarto](https://quarto.org/) publishing system, along with the [R](https://www.r-project.org/) and [AWK](https://en.wikipedia.org/wiki/AWK) programming languages. To ensure consistent results, the [`renv`](https://rstudio.github.io/renv/) package is used to manage and restore the R environment.
 
 Access to the raw data is restricted. Running the analyses requires an active internet connection and a set of access keys (see the [*Keys*](#keys) section). Do not use VPNs, corporate proxies, or other network-routing tools while processing the data, as these can interfere with authentication and downloads.
 
@@ -33,12 +37,12 @@ After installing the four dependencies mentioned above and setting all the keys,
 
 1. **Clone** this repository to your local machine.
 2. **Open** the project in your preferred IDE.
-3. **Restore the R environment** by running [`renv::restore()`](https://rstudio.github.io/renv/reference/restore.html) in the R console. This will install all required software dependencies.
+3. **Restore the R environment** by running `Sys.setenv(LIBARROW_MINIMAL = "false")` and [`renv::restore()`](https://rstudio.github.io/renv/reference/restore.html) in the R console. This will install all required software dependencies.
 4. **Open** `index.qmd` and run the code as described in the report.
 
 ## Keys
 
-To access the data and run the [Quarto](https://quarto.org/) notebook, you must first obtain authorization to access the project's [OSF](https://osf.io) repositories and [Google Sheets](https://workspace.google.com/products/sheets/) files.
+To access the data and run the [Quarto](https://quarto.org/) notebook, you must first obtain authorization to access the project's [Google Sheets](https://workspace.google.com/products/sheets/) files.
 
 Once you have the necessary permissions, run the following command to authorize your access to the Google Sheets API:
 
@@ -52,24 +56,26 @@ gs4_auth()
 gargle_oauth_cache()
 ```
 
-Next, create a file named [`.Renviron`](https://bookdown.org/csgillespie/efficientR/set-up.html#:~:text=2.4.6%20The%20.Renviron%20file) in the root directory of the project and add the following environment variables:
+## Known Issues
 
-- `OSF_PAT`: Your [OSF](https://osf.io/) Personal Access Token ([PAT](https://en.wikipedia.org/wiki/Personal_access_token)). If you don't have one, go to the settings section of your OSF account and create a new token.
-- `ACESSOSAN_PASSWORD`: The password for the project's [RSA](https://en.wikipedia.org/wiki/RSA_cryptosystem) private key (32 bytes).
+### Arrow Dependencies
 
-Example (do not use these values):
-
-```ini
-OSF_PAT=bWHtQBmdeMvZXDv2R4twdNLjmakjLUZr4t72ouAbNjwycGtDzfm3gjz4ChYXwbBaBVJxJR
-ACESSOSAN_PASSWORD=MmXN_od_pe*RdHgfKTaKiXdV7KD2qPzW
+```
+Error in `dplyr::compute()`:
+! NotImplemented: Support for codec 'zstd' not built
 ```
 
-Additionally, you will need the following keys in the project's [`_ssh`](_ssh) folder:
+This error occurs when [`arrow`](https://arrow.apache.org/docs/r/index.html) is missing certain dependencies. To fix it, run:
 
-- `id_rsa`: The project's private RSA key ([RSA](https://en.wikipedia.org/wiki/RSA_cryptosystem) 4096 bits (OpenSSL)).
-- `id_rsa.pub`: The project's public RSA key.
+```r
+Sys.setenv(LIBARROW_MINIMAL = "false")
+```
 
-These project's keys are provided to authorized personnel only. If you need access, please contact the authors.
+Then reinstall the `arrow` package:
+
+```r
+install.packages("arrow")
+```
 
 ## Citation
 

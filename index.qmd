@@ -8,25 +8,21 @@ source(here("R", "_setup.R"))
 ```
 
 <!-- badges: start -->
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![](https://img.shields.io/badge/OSF-10.17605/OSF.IO/2X6JB-1284C5.svg)](https://doi.org/10.17605/OSF.IO/2X6JB)
 [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-bd0000.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 <!-- badges: end -->
 
-::: {.callout-important}
-This pipeline is a **Work In Progress** (WIP) and is under active development. It may not yet be stable or suitable for public use. Please use it with caution and report any issues you encounter.
-:::
-
 ## Overview
 
-This report provides a fully reproducible pipeline for processing and [geocoding](https://en.wikipedia.org/wiki/Address_geocoding) [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s from the Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)).
+This report provides reproducible pipeline for processing, [geocoding](https://en.wikipedia.org/wiki/Address_geocoding), and classifying [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s from the Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)) using the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) scale.
 
 ## Problem
 
 The [AcessoSAN](https://doi.org/10.17605/OSF.IO/ZE6WT) project aims to develop methods for measuring and analyzing inequities in access to healthy food in favelas and other urban communities. Achieving this requires a reliable and up-to-date database of food retail establishments.
 
-The Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)) [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s database lists companies operating in Brazil, including food retail establishments. However, it does not provide [geocoded information](https://en.wikipedia.org/wiki/Address_geocoding), which is required for spatial analyses. This pipeline addresses that gap by processing and [geocoding](https://en.wikipedia.org/wiki/Address_geocoding) the data.
+The Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)) [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s database lists companies operating in Brazil, including food retail establishments. However, it does not provide [geocoded information](https://en.wikipedia.org/wiki/Address_geocoding), which is required for spatial analyses. This pipeline addresses that gap by processing and [geocoding](https://en.wikipedia.org/wiki/Address_geocoding) the data, nd classifying establishments according to the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) scale.
 
 ## Data Availability
 
@@ -34,7 +30,11 @@ The Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)
 [![](https://img.shields.io/badge/OSF-10.17605/OSF.IO/2X6JB-1284C5.svg)](https://doi.org/10.17605/OSF.IO/2X6JB)
 :::
 
-The processed data are available in both [`rds`](https://rdrr.io/r/base/readRDS.html) and [`csv`](https://en.wikipedia.org/wiki/Comma-separated_values) formats through a dedicated repository on the Open Science Framework ([OSF](https://osf.io/)), accessible [here](https://doi.org/10.17605/OSF.IO/2X6JB). A metadata file is included alongside the validated datasets. You can also retrieve these files directly from [R](https://www.r-project.org/) using the [`osfr`](https://docs.ropensci.org/osfr/) package.
+The processed data are available in [`csv`](https://en.wikipedia.org/wiki/Comma-separated_values), [`rds`](https://rdrr.io/r/base/readRDS.html) and [`parquet`](https://en.wikipedia.org/wiki/Apache_Parquet) formats through a dedicated repository on the Open Science Framework ([OSF](https://osf.io/)). A metadata file is included alongside the validated datasets.
+
+Because the classification table are not publicly available, only authorized personnel can access the processed files. They are protected with [RSA](https://en.wikipedia.org/wiki/RSA_cryptosystem) 4096-bit encryption ([OpenSSL](https://www.openssl.org/)) and a 32-byte password to ensure data security.
+
+If you already have access to the OSF repository and the project keys, click [here](https://doi.org/10.17605/OSF.IO/2X6JB) to access the data. You can also retrieve these files directly from [R](https://www.r-project.org/) using the [`osfr`](https://docs.ropensci.org/osfr/) package.
 
 ## Methods
 
@@ -44,14 +44,18 @@ The data used in this report come from the following sources:
 
 - Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)):
   - Data on food retail establishments from the [CNPJ database](https://dados.gov.br/dados/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj), used for company identification.
-  - Data on [Brazilian agencies and municipalities](https://dados.gov.br/dados/conjuntos-dados/tabela-de-rgos-e-municpios) (_Tabela de Órgãos e Municípios_).
-- Brazilian Institute of Geography and Statistics ([IBGE](https://www.ibge.gov.br/)): Open spatial datasets of Brazilian addresses from the National Address Register for Statistical Purposes ([CNEFE](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)), used for geocoding via the [`geocodebr`](https://ipeagit.github.io/geocodebr/) R package.
+  - Data on [Brazilian agencies and municipalities](https://dados.gov.br/dados/conjuntos-dados/tabela-de-rgos-e-municpios) (TOM).
+- Brazilian Institute of Geography and Statistics ([IBGE](https://www.ibge.gov.br/)):
+  - Municipality data via the [`geobr`](https://ipeagit.github.io/geobr/) R package.
+  - Open spatial datasets of Brazilian addresses from the National Address Register for Statistical Purposes ([CNEFE](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)), used for geocoding via the [`geocodebr`](https://ipeagit.github.io/geocodebr/) R package.
+- Center for Metropolitan Studies ([CEM](https://centrodametropole.fflch.usp.br/)): Lookup table providing the classification linking the establishments CNAEs (National Classification of Economic Activities) to the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) groups. This data will remain private until further notice.
 
 ### Data Munging
 
-The data munging follow the data science workflow outlined by @wickham2023e, as illustrated in [@fig-wickham-at-al-2023-figure-1]. All processes were made using the [Quarto](https://quarto.org/) publishing system [@allaire], the [R programming language](https://www.r-project.org/) [@rcoreteama] and several R packages.
+The data munging follow the data science workflow outlined by @wickham2023e, as illustrated in [@fig-wickham-at-al-2023-figure-1]. All processes were made using
+the [Quarto](https://quarto.org/) publishing system, along with the [AWK](https://en.wikipedia.org/wiki/AWK) [@aho2023] and [R](https://www.r-project.org/) [@rcoreteama] programming languages, supported by several R packages.
 
-Spatial data processing was performed using the [`terra`](https://rspatial.github.io/terra/reference/terra-package.html) R package [@hijmans] and the [rspatial](https://rspatial.org/) framework. For data manipulation and workflow, priority was given to packages from the [tidyverse](https://www.tidyverse.org/) and [rOpenSci](https://ropensci.org/) ecosystems, as well as other packages adhering to the tidy tools manifesto [@wickham2023c].
+For data manipulation and workflow, priority was given to packages from the [tidyverse](https://www.tidyverse.org/), [rOpenSci](https://ropensci.org/) and [r-spatial](https://r-spatial.org/) ecosystems, as well as other packages adhering to the tidy tools manifesto [@wickham2023c].
 
 ::: {#fig-wickham-at-al-2023-figure-1}
 ![](images/wickham-at-al-2023-figure-1.png){width=75%}
@@ -87,10 +91,10 @@ library(fs)
 library(geobr)
 library(geocodebr)
 library(ggplot2)
-library(ggspatial)
 library(googlesheets4)
 library(here)
 library(htmltools)
+library(labelled)
 library(lockr) # github.com/danielvartan/lockr
 library(magrittr)
 library(nanoparquet)
@@ -101,7 +105,6 @@ library(readr)
 library(rvest)
 library(rutils) # github.com/danielvartan/rutils
 library(sf)
-library(stringi)
 library(stringr)
 library(tidyr)
 library(vroom)
@@ -111,13 +114,15 @@ library(zip)
 ### Set Keys
 
 ```{r}
-osf_pat <- Sys.getenv("OSF_PAT") # askpass()
+#| output: false
+
+osf_auth(Sys.getenv("OSF_PAT")) # askpass())
 ```
 
 ```{r}
 #| output: false
 
-osf_auth(osf_pat)
+gs4_auth(cache = ".secrets")
 ```
 
 ```{r}
@@ -130,14 +135,6 @@ private_key <- here("_ssh", "id_rsa")
 
 ```{r}
 password <- Sys.getenv("ACESSOSAN_PASSWORD") # askpass()
-```
-
-### Set Google Sheets API
-
-```{r}
-#| output: false
-
-gs4_auth(cache = ".secrets")
 ```
 
 ### Set Input and Output Paths
@@ -169,7 +166,7 @@ month <- 1
 
 ```{r}
 municipalities <- c( # IBGE Codes
-  3550308 # , # São Paulo
+  3550308, # São Paulo
   2507507, # João Pessoa
   3106200, # Belo Horizonte
   4314902, # Porto Alegre
@@ -196,7 +193,9 @@ classification_data <-
       FALSE
     )
   )
+```
 
+```{r}
 classification_data |> glimpse()
 ```
 
@@ -215,9 +214,21 @@ url <- "https://www.gov.br/receitafederal/dados/municipios.csv"
 curl_download(url, destfile = file.path(raw_data_dir, "municipios.csv"))
 ```
 
-## Download the RFB Raw Data
+## Download IBGE Municipalities Data
 
-### Set Parameters
+```{r}
+#| labels: Download IBGE Municipalities Data
+
+municipalities_data <- brazil_municipality(year = year)
+```
+
+```{r}
+municipalities_data |> glimpse()
+```
+
+## Download RFB CNPJ Data
+
+### Clean Old Data Files
 
 ```{r}
 #| label: Download the RFB Raw Data
@@ -331,6 +342,10 @@ municipalities_tom_data |> glimpse()
 ```
 
 ## Replace IBGE Municipality Codes with TOM Codes
+
+```{r}
+municipalities
+```
 
 ```{r}
 municipalities <-
@@ -456,6 +471,11 @@ establishment_data <-
     municipality = municipality_ibge,
     complement = address_complement
   ) |>
+  left_join(
+    municipalities_data,
+    by = c("federal_unit", "municipality_code"),
+    suffix = c("", ".y")
+  ) |>
   mutate(
     cnpj_basic = str_pad(cnpj_basic, 8, pad = "0"),
     cnpj_order = str_pad(cnpj_order, 4, pad = "0"),
@@ -472,6 +492,7 @@ establishment_data <-
       "-", str_sub(cnae, 5, 5),
       "/", str_sub(cnae, 6, 7)
     ),
+    municipality_code = as.integer(municipality_code),
     street_type = str_to_title(street_type),
     street_name = str_to_title(street_name),
     address =
@@ -489,12 +510,18 @@ establishment_data <-
     neighborhood = str_to_title(neighborhood),
     postal_code =
       postal_code |>
-      as.numeric() |>
-      str_pad(pad = 0, width = 8)
+      str_remove_all("\\D") |>
+      str_pad(pad = 0, width = 8),
+    postal_code = paste0(
+      str_sub(postal_code, 1, 5),
+      "-",
+      str_sub(postal_code, 6, 8)
+    )
   ) |>
   select(
     cnpj, cnae,
-    federal_unit, municipality_code, municipality,
+    region_code, region, state_code, state, federal_unit,
+    municipality_code, municipality,
     address, number, complement, neighborhood, postal_code,
     g0, g1_g2, g3, g4
   ) |>
@@ -579,7 +606,197 @@ establishment_data |> glimpse()
 
 ## Data Dictionary
 
+```{r}
+#| labels: Data Dictionary
+
+metadata <-
+  establishment_data |>
+  `var_label<-`(
+    list(
+      cnpj = "CNPJ number",
+      cnae = "Primary activity CNAE",
+      region_code = "IBGE region code",
+      region = "Region name",
+      state_code = "IBGE state code",
+      state = "State name",
+      federal_unit = "Federal unit abbreviation",
+      municipality_code = "IBGE municipality code",
+      municipality = "Municipality name",
+      address = "Street address",
+      number = "Address number",
+      complement = "Address complement",
+      neighborhood = "Neighborhood",
+      postal_code = "Postal code",
+      latitude = "Latitude",
+      longitude = "Longitude",
+      geocodebr_precision = "Precision value from geocodebr",
+      geocodebr_type_of_result = "Result type from geocodebr",
+      geocodebr_deviation_meters = "Deviation (meters) from geocodebr",
+      geocodebr_address_found = "Address returned by geocodebr",
+      geocodebr_ambiguous = "Ambiguous result from geocodebr",
+      g0 = "Locais-Nova Group 0",
+      g1_g2 = "Locais-Nova Groups 1 and 2",
+      g3 = "Locais-Nova Group 3",
+      g4 = "Locais-Nova Group 4"
+    )
+  ) |>
+  generate_dictionary(details = "full") |>
+  convert_list_columns_to_character()
+```
+
+```{r}
+metadata
+```
+
+```{r}
+establishment_data
+```
+
 ## Save the Valid Data
+
+### Clean Old Data Files
+
+```{r}
+#| label: Save the Valid Data
+
+if (dir_exists(data_dir)) {
+  dir_delete(data_dir)
+  dir_create(data_dir, recurse = TRUE)
+}
+```
+
+### Write Data
+
+```{r}
+valid_file_pattern <- paste0(
+  "valid-",
+  year,
+  "-",
+  str_pad(month, width = 2, pad = "0")
+)
+```
+
+```{r}
+establishment_data |>
+  write_csv(
+    here(data_dir, paste0(valid_file_pattern, ".csv"))
+  )
+```
+
+```{r}
+establishment_data |>
+  write_rds(
+    here(data_dir, paste0(valid_file_pattern, ".rds"))
+  )
+```
+
+```{r}
+establishment_data |>
+  nanoparquet::write_parquet(
+    here(data_dir, paste0(valid_file_pattern, ".parquet"))
+  )
+```
+
+### Lock Data
+
+```{r}
+here(data_dir, paste0(valid_file_pattern, ".csv")) |>
+  lock_file(
+    public_key = public_key,
+    suffix = ".lockr",
+    remove_file = TRUE
+  )
+```
+
+```{r}
+here(data_dir, paste0(valid_file_pattern, ".rds")) |>
+  lock_file(
+    public_key = public_key,
+    suffix = ".lockr",
+    remove_file = TRUE
+  )
+```
+
+```{r}
+here(data_dir, paste0(valid_file_pattern, ".parquet")) |>
+  lock_file(
+    public_key = public_key,
+    suffix = ".lockr",
+    remove_file = TRUE
+  )
+```
+
+### Write Metadata
+
+```{r}
+metadata_file_pattern <- paste0(
+  "metadata-",
+  year,
+  "-",
+  str_pad(month, width = 2, pad = "0")
+)
+```
+
+```{r}
+metadata |>
+  write_csv(
+    here("data", paste0(metadata_file_pattern, ".csv"))
+  )
+```
+
+```{r}
+metadata |>
+  write_rds(
+    here("data", paste0(metadata_file_pattern, ".rds"))
+  )
+```
+
+<!-- ## Upload the Data to OSF (Optional) -->
+
+```{r}
+#| eval: false
+#| include: false
+
+osf_id <- paste0("https://osf.io/", "2x6jb")
+
+osf_upload(
+  x = osf_retrieve_node(osf_id),
+  path = c(
+    here("data", paste0(valid_file_pattern, ".csv.lockr")),
+    here("data", paste0(valid_file_pattern, ".rds.lockr")),
+    here("data", paste0(valid_file_pattern, ".parquet.lockr")),
+    here("data", paste0(metadata_file_pattern, ".csv")),
+    here("data", paste0(metadata_file_pattern, ".rds"))
+  ),
+  conflicts = "overwrite"
+)
+```
+
+<!-- ## Unlock Data (Optional) -->
+
+```{r}
+#| eval: false
+#| include: false
+
+here(data_dir, paste0(valid_file_pattern, ".rds.lockr")) |>
+  unlock_file(
+    private_key = private_key,
+    suffix = ".lockr",
+    remove_file = TRUE,
+    password = password
+  )
+```
+
+<!-- ## Read Data (Optional) -->
+
+```{r}
+#| eval: false
+#| include: false
+
+establishment_data <-
+  here(data_dir, paste0(valid_file_pattern, ".rds")) |>
+  read_rds()
+```
 
 ## Visualize the Data
 
