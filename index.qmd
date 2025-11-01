@@ -42,7 +42,9 @@ The processed data are available in both [`rds`](https://rdrr.io/r/base/readRDS.
 
 The data used in this report come from the following sources:
 
-- Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)): Data on food retail establishments from the [CNPJ database](https://dados.gov.br/dados/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj), used for company identification.
+- Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)):
+  - Data on food retail establishments from the [CNPJ database](https://dados.gov.br/dados/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj), used for company identification.
+  - Data on [Brazilian agencies and municipalities](https://dados.gov.br/dados/conjuntos-dados/tabela-de-rgos-e-municpios) (_Tabela de Órgãos e Municípios_).
 - Brazilian Institute of Geography and Statistics ([IBGE](https://www.ibge.gov.br/)): Open spatial datasets of Brazilian addresses from the National Address Register for Statistical Purposes ([CNEFE](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)), used for geocoding via the [`geocodebr`](https://ipeagit.github.io/geocodebr/) R package.
 
 ### Data Munging
@@ -72,50 +74,82 @@ The pipeline is fully reproducible and can be run again at any time. To ensure c
 ### Load Packages
 
 ```{r}
+#| label: Set the Environment
 #| code-fold: false
 #| output: false
 
+library(askpass)
 library(brandr)
 library(beepr)
-library(cli)
-library(checkmate)
+library(curl)
 library(dplyr)
 library(fs)
+library(geobr)
 library(geocodebr)
 library(ggplot2)
+library(ggspatial)
+library(googlesheets4)
 library(here)
 library(htmltools)
+library(lockr) # github.com/danielvartan/lockr
 library(magrittr)
+library(nanoparquet)
+library(orbis) # github.com/danielvartan/orbis
 library(osfr)
 library(purrr)
 library(readr)
-library(rutils) # github.com/danielvartan/rutils
 library(rvest)
+library(rutils) # github.com/danielvartan/rutils
+library(sf)
+library(stringi)
 library(stringr)
+library(tidyr)
 library(vroom)
 library(zip)
 ```
 
-### Set Functions
+### Set Keys
 
 ```{r}
-map_tibble <- function(x, n_max = Inf) {
-  assert_character(x, any.missing = FALSE, min.len = 1)
-  assert_count(n_max, positive = TRUE)
+osf_pat <- Sys.getenv("OSF_PAT") # askpass()
+```
 
-  x |>
-    map(
-      \(x) vroom(
-        file = x,
-        delim = ";",
-        col_names = FALSE,
-        col_types = cols(.default = "c"),
-        n_max = n_max, # For testing.
-        progress = FALSE
-      ),
-      .progress = TRUE
-    ) |>
-      list_rbind()
+```{r}
+#| output: false
+
+osf_auth(osf_pat)
+```
+
+```{r}
+public_key <- here("_ssh", "id_rsa.pub")
+```
+
+```{r}
+private_key <- here("_ssh", "id_rsa")
+```
+
+```{r}
+password <- Sys.getenv("ACESSOSAN_PASSWORD") # askpass()
+```
+
+### Set Google Sheets API
+
+```{r}
+#| output: false
+
+gs4_auth(cache = ".secrets")
+```
+
+### Set Input and Output Paths
+
+```{r}
+raw_data_dir <- here("data-raw")
+data_dir <- here("data")
+```
+
+```{r}
+for (i in c(raw_data_dir, data_dir)) {
+  if (!dir_exists(i)) dir_create(i, recurse = TRUE)
 }
 ```
 
@@ -133,25 +167,69 @@ year <- 2025
 month <- 1
 ```
 
-## Download the Raw Data
+```{r}
+municipalities <- c( # IBGE Codes
+  3550308 # , # São Paulo
+  # 2507507, # João Pessoa
+  # 3106200, # Belo Horizonte
+  # 4314902, # Porto Alegre
+  # 1721000, # Palmas
+  # 5300108, # Brasília
+  # 5208707  # Goiânia
+)
+```
 
-### Set Parameters
+## Download CNAE Classification Table
 
 ```{r}
-raw_data_dir <- here("data-raw")
+#| label: Download CNAE Classification Table
+
+classification_data <-
+  read_sheet(
+    ss = "1ipCw2FM3aUOdRd4w55J5SUEgXDCogxWZF-NZi0A-o_4",
+    sheet = "Dataset"
+  ) |>
+  mutate(
+    g0 = if_else(
+      g1_g2 == TRUE & g3 == FALSE & g4 == FALSE,
+      TRUE,
+      FALSE
+    )
+  )
+
+classification_data |> glimpse()
+```
+
+## Download Data on Brazilian Agencies and Municipalities
+
+```{r}
+#| label: Download Data on Brazilian Agencies and Municipalities
+#| eval: false
+
+url <- "https://www.gov.br/receitafederal/dados/municipios.csv"
 ```
 
 ```{r}
 #| eval: false
 
-if (dir_exists(raw_data_dir)) dir_delete(raw_data_dir)
+curl_download(url, destfile = file.path(raw_data_dir, "municipios.csv"))
 ```
+
+## Download the RFB Raw Data
+
+### Set Parameters
 
 ```{r}
-if (!dir_exists(raw_data_dir)) dir_create(raw_data_dir, recurse = TRUE)
+#| label: Download the RFB Raw Data
+#| eval: false
+
+if (dir_exists(raw_data_dir)) {
+  dir_delete(raw_data_dir)
+  dir_create(raw_data_dir, recurse = TRUE)
+}
 ```
 
-### Download File
+### Download Files
 
 ```{r}
 root <- file.path( # Don´t change the function!
@@ -193,7 +271,7 @@ urls |> download_file(dir = raw_data_dir)
 # beep()
 ```
 
-## Unzip Data
+### Unzip Files
 
 ```{r}
 #| eval: false
@@ -214,77 +292,218 @@ zip_files |> map(\(x) unzip(x, exdir = raw_data_dir), .progress = TRUE)
 zip_files |> file_delete()
 ```
 
-## Read the Data
-
-### Set Parameters
+## Read TOM Municipality Codes
 
 ```{r}
-n_max <- 10 # For testing.
-```
-
-### Companies
-
-```{r}
-company_data <-
+municipalities_tom_data <-
   raw_data_dir |>
-  dir_ls(type = "file", regexp = "\\.EMPRECSV$") |>
-  map_tibble(n_max = n_max) |>
+  path("municipios.csv") |>
+  read_delim(
+    delim = ";",
+    col_names = FALSE,
+    col_types = cols(.default = "c"),
+    progress = FALSE
+  ) |>
+  slice(-1) |>
+  mutate(
+    across(
+      .cols = everything(),
+      .fns = \(x) iconv(x, from = "Windows-1252", to = "UTF-8") # iconvlist()
+    )
+  ) |>
   rename_with(
     \(x) c(
-      "cnpj_basic",
-      "company_name",
-      "legal_nature",
-      "responsible_qualification",
-      "company_share_capital",
-      "company_size",
-      "responsible_federal_entity"
+    "municipality_code_tom",
+    "municipality_code_ibge",
+    "municipality_tom",
+    "municipality_ibge",
+    "uf"
     )
+  ) |>
+  mutate(
+    municipality_code_tom = as.integer(municipality_code_tom),
+    municipality_code_ibge = as.integer(municipality_code_ibge)
   )
 ```
 
 ```{r}
-company_data |> glimpse()
+municipalities_tom_data |> glimpse()
 ```
 
-### Establishments
+## Replace IBGE Municipality Codes with TOM Codes
 
 ```{r}
+municipalities <-
+  municipalities_tom_data |>
+  filter(municipality_code_ibge %in% municipalities) |>
+  pull(municipality_code_tom)
+```
+
+```{r}
+municipalities
+```
+
+## Read the Data
+
+```{r}
+#| label: Read the Data
+
 establishment_data <-
   raw_data_dir |>
   dir_ls(type = "file", regexp = "\\.ESTABELE$") |>
-  map_tibble(n_max = n_max) |>
-  rename_with(
-    \(x) c(
-      "cnpj_basic",
-      "cnpj_order",
-      "cnpj_dv",
-      "branch_identifier",
-      "trade_name",
-      "registration_status",
-      "registration_status_date",
-      "registration_status_reason",
-      "foreign_city_name",
-      "country",
-      "start_date",
-      "cnae_primary",
-      "cnae_secondary",
-      "street_type",
-      "street_name",
-      "number",
-      "address_complement",
-      "neighborhood",
-      "postal_code",
-      "federal_unit",
-      "municipality_tom",
-      "phone_area_code_1",
-      "phone_number_1",
-      "phone_area_code_2",
-      "phone_number_2",
-      "fax_area_code",
-      "fax_number",
-      "email",
-      "special_status",
-      "special_status_date"
+  map(
+    function(x) {
+      vroom(
+        # Uses `pipe()` and `awk` to filter data to avoid loading the
+        # entire file into memory.
+        file = pipe(
+          paste0(
+            "awk ",
+            "-F ",
+            "';' ",
+            "'{ ",
+            "if (",
+            '$6 == "', '\\"02\\"', '"',
+            " && ",
+            paste0('$21 == "\\"', municipalities, '\\""', collapse = " || "),
+            ") ",
+            "print",
+            " }' ",
+            x
+          )
+        ),
+        delim = ";",
+        col_names = c(
+          "cnpj_basic",
+          "cnpj_order",
+          "cnpj_dv",
+          "branch_identifier",
+          "trade_name",
+          "registration_status",
+          "registration_status_date",
+          "registration_status_reason",
+          "foreign_city_name",
+          "country",
+          "start_date",
+          "cnae_primary",
+          "cnae_secondary",
+          "street_type",
+          "street_name",
+          "number",
+          "address_complement",
+          "neighborhood",
+          "postal_code",
+          "federal_unit",
+          "municipality_code_tom",
+          "phone_area_code_1",
+          "phone_number_1",
+          "phone_area_code_2",
+          "phone_number_2",
+          "fax_area_code",
+          "fax_number",
+          "email",
+          "special_status",
+          "special_status_date"
+        ),
+        col_types = cols(.default = "c"),
+        col_select = c(
+          "cnpj_basic", "cnpj_order", "cnpj_dv", "cnae_primary",
+          "federal_unit", "municipality_code_tom", "street_type",
+          "street_name", "number", "address_complement", "neighborhood",
+          "postal_code"
+        ),
+        show_col_types = FALSE
+      )
+    },
+    .progress = TRUE
+  ) |>
+    list_rbind()
+```
+
+```{r}
+establishment_data |> glimpse()
+```
+
+## Filter the Data
+
+```{r}
+#| label: Filter the Data
+
+establishment_data <-
+  establishment_data |>
+  mutate(cnae = str_pad(cnae_primary, 7, pad = "0")) |>
+  left_join(classification_data, by = c("cnae", "federal_unit")) |>
+  drop_na(g0, g1_g2, g3, g4)
+```
+
+```{r}
+establishment_data |> glimpse()
+```
+
+## Tidy the Data
+
+```{r}
+#| label: Tidy the Data
+
+establishment_data <-
+  establishment_data |>
+  mutate(municipality_code_tom = as.integer(municipality_code_tom)) |>
+  left_join(municipalities_tom_data, by = "municipality_code_tom") |>
+  rename(
+    municipality_code = municipality_code_ibge,
+    municipality = municipality_ibge,
+    complement = address_complement
+  ) |>
+  mutate(
+    cnpj_basic = str_pad(cnpj_basic, 8, pad = "0"),
+    cnpj_order = str_pad(cnpj_order, 4, pad = "0"),
+    cnpj_dv = str_pad(cnpj_dv, 2, pad = "0"),
+    cnpj = paste0(
+      str_sub(cnpj_basic, 1, 2),
+      ".", str_sub(cnpj_basic, 3, 5),
+      ".", str_sub(cnpj_basic, 6, 8),
+      "/", cnpj_order,
+      "-", cnpj_dv
+    ),
+    cnae = paste0(
+      str_sub(cnae, 1, 4),
+      "-", str_sub(cnae, 5, 5),
+      "/", str_sub(cnae, 6, 7)
+    ),
+    street_type = str_to_title(street_type),
+    street_name = str_to_title(street_name),
+    address =
+      paste(street_type, street_name) |>
+      iconv(to = "ASCII//TRANSLIT"),
+    number =
+      number |>
+      iconv(to = "ASCII//TRANSLIT") |>
+      str_remove_all("\\D") |>
+      str_trim() |>
+      as.numeric() |>
+      as.character() |>
+      suppressWarnings(),
+    complement = str_to_title(complement),
+    neighborhood = str_to_title(neighborhood),
+    postal_code =
+      postal_code |>
+      as.numeric() |>
+      str_pad(pad = 0, width = 8)
+  ) |>
+  select(
+    cnpj, cnae,
+    federal_unit, municipality_code, municipality,
+    address, number, complement, neighborhood, postal_code,
+    g0, g1_g2, g3, g4
+  ) |>
+  mutate(
+    across(
+      .cols = where(is.character),
+      .fns = function(x) {
+          Encoding(x) <- "UTF-8"
+
+          iconv(x, from = "", to = "UTF-8", sub = "")
+      }
     )
   )
 ```
@@ -293,189 +512,153 @@ establishment_data <-
 establishment_data |> glimpse()
 ```
 
-### Shareholders
-
-```{r}
-shareholder_data <-
-  raw_data_dir |>
-  dir_ls(type = "file", regexp = "\\.SOCIOCSV$") |>
-  map_tibble(n_max = n_max) |>
-  rename_with(
-    \(x) c(
-      "cnpj_basic",
-      "shareholder_identifier",
-      "shareholder_name",
-      "shareholder_cpf_cnpj",
-      "shareholder_qualification",
-      "entry_date_in_company",
-      "country",
-      "representative_cpf",
-      "representative_name",
-      "representative_qualification",
-      "age_range"
-    )
-  )
-```
-
-```{r}
-shareholder_data |> glimpse()
-```
-
-### Shareholder Qualifications
-
-```{r}
-shareholder_qualification_data <-
-  raw_data_dir |>
-  dir_ls(type = "file", regexp = "\\.QUALSCSV$") |>
-  map_tibble(n_max = n_max) |>
-  rename_with(
-    \(x) c(
-      "shareholder_qualification_code",
-      "shareholder_qualification"
-    )
-  )
-```
-
-```{r}
-shareholder_qualification_data |> glimpse()
-```
-
-### CNAE
-
-```{r}
-cnae_data <-
-  raw_data_dir |>
-  dir_ls(type = "file", regexp = "\\.CNAECSV$") |>
-  map_tibble(n_max = n_max) |>
-  rename_with(
-    \(x) c(
-    "cnae_code",
-    "cnae_description"
-    )
-  )
-```
-
-```{r}
-cnae_data |> glimpse()
-```
-
-### Simples
-
-```{r}
-simples_data <-
-  raw_data_dir |>
-  dir_ls(type = "file", regexp = "SIMPLES.CSV") |>
-  map_tibble(n_max = n_max) |>
-  rename_with(
-    \(x) c(
-      "cnpj_basic",
-      "simples",
-      "simples_option_date",
-      "simples_exclusion_date",
-      "mei",
-      "mei_option_date",
-      "mei_exclusion_date"
-    )
-  )
-```
-
-```{r}
-simples_data |> glimpse()
-```
-
-### Legal Nature
-
-```{r}
-legal_nature_data <-
-  raw_data_dir |>
-  dir_ls(type = "file", regexp = "\\.NATJUCSV$") |>
-  map_tibble(n_max = n_max) |>
-  rename_with(
-    \(x) c(
-    "legal_nature_code",
-    "legal_nature"
-    )
-  )
-```
-
-```{r}
-legal_nature_data |> glimpse()
-```
-
-### Registration Status Reasons
-
-```{r}
-registration_status_reason_data <-
-  raw_data_dir |>
-  dir_ls(type = "file", regexp = "\\.MOTICSV$") |>
-  map_tibble(n_max = n_max) |>
-  rename_with(
-    \(x) c(
-    "registration_status_reason_code",
-    "registration_status_reason"
-    )
-  )
-```
-
-```{r}
-registration_status_reason_data |> glimpse()
-```
-
-### Countries
-
-```{r}
-countries_data <-
-  raw_data_dir |>
-  dir_ls(type = "file", regexp = "\\.PAISCSV$") |>
-  map_tibble(n_max = n_max) |>
-  rename_with(
-    \(x) c(
-    "country_code",
-    "country"
-    )
-  )
-```
-
-```{r}
-countries_data |> glimpse()
-```
-
-### Municipalities
-
-```{r}
-municipalities_data <-
-  raw_data_dir |>
-  dir_ls(type = "file", regexp = "\\.MUNICCSV$") |>
-  map_tibble(n_max = n_max) |>
-  rename_with(
-    \(x) c(
-    "municipality_code",
-    "municipality"
-    )
-  )
-```
-
-```{r}
-municipalities_data |> glimpse()
-```
-
-## Filter the Data
-
-## Tidy the Data
-
-## Transform the Data
-
-## Validate the Data
-
 ## Arrange the Data
 
+```{r}
+#| label: Arrange the Data
+
+establishment_data <-
+  establishment_data |>
+  arrange(federal_unit, municipality, cnae)
+```
+
+```{r}
+establishment_data |> glimpse()
+```
+
 ## Geocode the Data
+
+```{r}
+#| label: Geocode the Data
+
+fields <- definir_campos(
+  estado = "federal_unit",
+  municipio = "municipality_code",
+  logradouro = "address",
+  numero = "number",
+  cep = "postal_code",
+  localidade = "neighborhood"
+)
+```
+
+```{r}
+establishment_data <-
+  establishment_data |>
+  geocode(
+    campos_endereco = fields,
+    resultado_sf = FALSE,
+    verboso = TRUE,
+    cache = TRUE,
+    n_cores = 1,
+    resolver_empates = TRUE
+  )
+```
+
+```{r}
+establishment_data <-
+  establishment_data |>
+  as_tibble() |>
+  rename(
+    latitude = lat,
+    longitude = lon,
+    geocodebr_precision = precisao,
+    geocodebr_type_of_result = tipo_resultado,
+    geocodebr_deviation_meters = desvio_metros,
+    geocodebr_address_found = endereco_encontrado,
+    geocodebr_ambiguous = empate
+  ) |>
+  relocate(g0, g1_g2, g3, g4, .after = geocodebr_ambiguous) |>
+  drop_na(all_of(c("latitude", "longitude")))
+```
+
+```{r}
+establishment_data |> glimpse()
+```
 
 ## Data Dictionary
 
 ## Save the Valid Data
 
 ## Visualize the Data
+
+### Set Variables
+
+```{r}
+#| label: Visualize the Data
+
+plot_municipality <- 3550308 # São Paulo
+```
+
+### Set Shape
+
+```{r}
+shape <-
+  plot_municipality |>
+  read_municipality(year = closest_geobr_year(year)) |>
+  st_transform(st_crs(4326))
+```
+
+### Prepare Data
+
+```{r}
+plot_data <-
+  establishment_data |>
+  filter(municipality_code == plot_municipality) |>
+  pivot_longer(
+    cols = all_of(c("g0", "g1_g2", "g3", "g4")),
+    names_to = "group",
+    values_to = "value"
+  ) |>
+  filter(value == TRUE) |>
+  st_as_sf(
+    coords = c("longitude", "latitude"),
+    crs = 4326
+  ) |>
+  st_join(shape, join = st_within, left = FALSE) %>%
+  mutate(
+    latitude = st_coordinates(.)[,2],
+    longitude = st_coordinates(.)[,1]
+  ) |>
+  st_drop_geometry() |>
+  transmute(
+    group =
+      group |>
+      str_to_upper() |>
+      str_replace("_", "-"),
+    latitude,
+    longitude
+  )
+```
+
+```{r}
+plot_data |> glimpse()
+```
+
+### Plot Data
+
+```{r}
+#| label: Test Plot
+
+ggplot() +
+  geom_sf(
+    data = shape,
+    fill = "gray90",
+    color = "black"
+  ) +
+  geom_point(
+    data = plot_data,
+    mapping = aes(x = longitude, y = latitude, color = group),
+    size = 0.01
+    # color = get_brand_color("blue")
+  ) +
+  facet_wrap(~ group, ncol = 4) +
+  coord_sf(crs = 4326) +
+  scale_x_continuous(labels = NULL, breaks = NULL) +
+  scale_y_continuous(labels = NULL, breaks = NULL) +
+  scale_colour_brand_d() +
+  theme(legend.position = "none") +
+  labs(x = NULL, y = NULL, color = NULL)
+```
 
 ## Citation
 
@@ -485,14 +668,14 @@ When using this data, you must also cite the original data sources.
 
 To cite this work, please use the following format:
 
-Vartanian, D., Penz, C. L. S., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/rfb-cnpj-geocoding>
+Vartanian, D., Penz, C. L. S., Caldeira, G., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/rfb-cnpj-geocoding>
 
 A BibTeX entry for LaTeX users is
 
 ```latex
 @software{vartanian2025,
   title = {A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)},
-  author = {{Daniel Vartanian} and {Clara de Lima e Silva Penz} and {Camila Nastari Fernandes} and {Mariana Abrantes Giannotti}},
+  author = {{Daniel Vartanian} and {Clara de Lima e Silva Penz} and {Gabriel Caldeira} and {Camila Nastari Fernandes} and {Mariana Abrantes Giannotti}},
   year = {2025},
   address = {São Paulo},
   institution = {Center for Metropolitan Studies of the University of São Paulo},
@@ -509,13 +692,13 @@ A BibTeX entry for LaTeX users is
 :::
 
 ::: {.callout-important}
-The original data sources may have their own license terms and conditions.
+The original data sources may be subject to their own licensing terms and conditions.
 :::
 
-The code in this report is licensed under the [GNU General Public License Version 3](https://www.gnu.org/licenses/gpl-3.0), while the report is available under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+The code in this repository is licensed under the [GNU General Public License Version 3](https://www.gnu.org/licenses/gpl-3.0), while the report is available under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
 ``` text
-Copyright (C) 2025 Daniel Vartanian
+Copyright (C) 2025 Center for Metropolitan Studies
 
 The code in this report is free software: you can redistribute it and/or
 modify it under the terms of the GNU General Public License as published by the

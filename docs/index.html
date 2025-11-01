@@ -4,7 +4,7 @@
 <meta name="generator" content="quarto-1.8.24">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <meta name="author" content="Daniel Vartanian, Clara L. S. Penz, Camila N. Fernandes, &amp; Mariana A. Giannotti">
-<meta name="dcterms.date" content="2025-10-09">
+<meta name="dcterms.date" content="2025-11-01">
 <title>A Reproducible Pipeline for Processing and Geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)</title>
 <style>
 code{white-space: pre-wrap;}
@@ -121,10 +121,10 @@ div.csl-indent {
 <meta name="citation_title" content="A Reproducible Pipeline for Processing and Geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)
 ">
 <meta name="citation_author" content="Daniel Vartanian, Clara L. S. Penz, Camila N. Fernandes, &amp;amp; Mariana A. Giannotti">
-<meta name="citation_publication_date" content="2025-10-09">
-<meta name="citation_cover_date" content="2025-10-09">
+<meta name="citation_publication_date" content="2025-11-01">
+<meta name="citation_cover_date" content="2025-11-01">
 <meta name="citation_year" content="2025">
-<meta name="citation_online_date" content="2025-10-09">
+<meta name="citation_online_date" content="2025-11-01">
 <meta name="citation_fulltext_html_url" content="https://cem-usp.github.io/rfb-cnpj-geocoding/">
 <meta name="citation_language" content="en">
 <meta name="citation_reference" content="citation_title=Quarto;,citation_abstract=Quarto is an open-source scientific and technical publishing system built on Pandoc.;,citation_author=J. J. Allaire;,citation_author=Charles Teague;,citation_author=Yihui Xie;,citation_author=Christophe Dervieux;,citation_fulltext_html_url=https://quarto.org;,citation_doi=10.5281/ZENODO.5960048;,citation_publisher=Zenodo;">
@@ -180,43 +180,40 @@ div.csl-indent {
 <a href="#set-the-environment" id="toc-set-the-environment" class="nav-link" data-scroll-target="#set-the-environment">Set the Environment</a>
   <ul>
 <li><a href="#load-packages" id="toc-load-packages" class="nav-link" data-scroll-target="#load-packages">Load Packages</a></li>
-  <li><a href="#set-functions" id="toc-set-functions" class="nav-link" data-scroll-target="#set-functions">Set Functions</a></li>
+  <li><a href="#set-keys" id="toc-set-keys" class="nav-link" data-scroll-target="#set-keys">Set Keys</a></li>
+  <li><a href="#set-google-sheets-api" id="toc-set-google-sheets-api" class="nav-link" data-scroll-target="#set-google-sheets-api">Set Google Sheets API</a></li>
+  <li><a href="#set-input-and-output-paths" id="toc-set-input-and-output-paths" class="nav-link" data-scroll-target="#set-input-and-output-paths">Set Input and Output Paths</a></li>
   <li><a href="#set-initial-variables" id="toc-set-initial-variables" class="nav-link" data-scroll-target="#set-initial-variables">Set Initial Variables</a></li>
   </ul>
 </li>
+  <li><a href="#download-cnae-classification-table" id="toc-download-cnae-classification-table" class="nav-link" data-scroll-target="#download-cnae-classification-table">Download CNAE Classification Table</a></li>
+  <li><a href="#download-data-on-brazilian-agencies-and-municipalities" id="toc-download-data-on-brazilian-agencies-and-municipalities" class="nav-link" data-scroll-target="#download-data-on-brazilian-agencies-and-municipalities">Download Data on Brazilian Agencies and Municipalities</a></li>
   <li>
-<a href="#download-the-raw-data" id="toc-download-the-raw-data" class="nav-link" data-scroll-target="#download-the-raw-data">Download the Raw Data</a>
+<a href="#download-the-rfb-raw-data" id="toc-download-the-rfb-raw-data" class="nav-link" data-scroll-target="#download-the-rfb-raw-data">Download the RFB Raw Data</a>
   <ul>
 <li><a href="#set-parameters" id="toc-set-parameters" class="nav-link" data-scroll-target="#set-parameters">Set Parameters</a></li>
-  <li><a href="#download-file" id="toc-download-file" class="nav-link" data-scroll-target="#download-file">Download File</a></li>
+  <li><a href="#download-files" id="toc-download-files" class="nav-link" data-scroll-target="#download-files">Download Files</a></li>
+  <li><a href="#unzip-files" id="toc-unzip-files" class="nav-link" data-scroll-target="#unzip-files">Unzip Files</a></li>
   </ul>
 </li>
-  <li><a href="#unzip-data" id="toc-unzip-data" class="nav-link" data-scroll-target="#unzip-data">Unzip Data</a></li>
-  <li>
-<a href="#read-the-data" id="toc-read-the-data" class="nav-link" data-scroll-target="#read-the-data">Read the Data</a>
-  <ul>
-<li><a href="#set-parameters-1" id="toc-set-parameters-1" class="nav-link" data-scroll-target="#set-parameters-1">Set Parameters</a></li>
-  <li><a href="#companies" id="toc-companies" class="nav-link" data-scroll-target="#companies">Companies</a></li>
-  <li><a href="#establishments" id="toc-establishments" class="nav-link" data-scroll-target="#establishments">Establishments</a></li>
-  <li><a href="#shareholders" id="toc-shareholders" class="nav-link" data-scroll-target="#shareholders">Shareholders</a></li>
-  <li><a href="#shareholder-qualifications" id="toc-shareholder-qualifications" class="nav-link" data-scroll-target="#shareholder-qualifications">Shareholder Qualifications</a></li>
-  <li><a href="#cnae" id="toc-cnae" class="nav-link" data-scroll-target="#cnae">CNAE</a></li>
-  <li><a href="#simples" id="toc-simples" class="nav-link" data-scroll-target="#simples">Simples</a></li>
-  <li><a href="#legal-nature" id="toc-legal-nature" class="nav-link" data-scroll-target="#legal-nature">Legal Nature</a></li>
-  <li><a href="#registration-status-reasons" id="toc-registration-status-reasons" class="nav-link" data-scroll-target="#registration-status-reasons">Registration Status Reasons</a></li>
-  <li><a href="#countries" id="toc-countries" class="nav-link" data-scroll-target="#countries">Countries</a></li>
-  <li><a href="#municipalities" id="toc-municipalities" class="nav-link" data-scroll-target="#municipalities">Municipalities</a></li>
-  </ul>
-</li>
+  <li><a href="#read-tom-municipality-codes" id="toc-read-tom-municipality-codes" class="nav-link" data-scroll-target="#read-tom-municipality-codes">Read TOM Municipality Codes</a></li>
+  <li><a href="#replace-ibge-municipality-codes-with-tom-codes" id="toc-replace-ibge-municipality-codes-with-tom-codes" class="nav-link" data-scroll-target="#replace-ibge-municipality-codes-with-tom-codes">Replace IBGE Municipality Codes with TOM Codes</a></li>
+  <li><a href="#read-the-data" id="toc-read-the-data" class="nav-link" data-scroll-target="#read-the-data">Read the Data</a></li>
   <li><a href="#filter-the-data" id="toc-filter-the-data" class="nav-link" data-scroll-target="#filter-the-data">Filter the Data</a></li>
   <li><a href="#tidy-the-data" id="toc-tidy-the-data" class="nav-link" data-scroll-target="#tidy-the-data">Tidy the Data</a></li>
-  <li><a href="#transform-the-data" id="toc-transform-the-data" class="nav-link" data-scroll-target="#transform-the-data">Transform the Data</a></li>
-  <li><a href="#validate-the-data" id="toc-validate-the-data" class="nav-link" data-scroll-target="#validate-the-data">Validate the Data</a></li>
   <li><a href="#arrange-the-data" id="toc-arrange-the-data" class="nav-link" data-scroll-target="#arrange-the-data">Arrange the Data</a></li>
   <li><a href="#geocode-the-data" id="toc-geocode-the-data" class="nav-link" data-scroll-target="#geocode-the-data">Geocode the Data</a></li>
   <li><a href="#data-dictionary" id="toc-data-dictionary" class="nav-link" data-scroll-target="#data-dictionary">Data Dictionary</a></li>
   <li><a href="#save-the-valid-data" id="toc-save-the-valid-data" class="nav-link" data-scroll-target="#save-the-valid-data">Save the Valid Data</a></li>
-  <li><a href="#visualize-the-data" id="toc-visualize-the-data" class="nav-link" data-scroll-target="#visualize-the-data">Visualize the Data</a></li>
+  <li>
+<a href="#visualize-the-data" id="toc-visualize-the-data" class="nav-link" data-scroll-target="#visualize-the-data">Visualize the Data</a>
+  <ul>
+<li><a href="#set-variables" id="toc-set-variables" class="nav-link" data-scroll-target="#set-variables">Set Variables</a></li>
+  <li><a href="#set-shape" id="toc-set-shape" class="nav-link" data-scroll-target="#set-shape">Set Shape</a></li>
+  <li><a href="#prepare-data" id="toc-prepare-data" class="nav-link" data-scroll-target="#prepare-data">Prepare Data</a></li>
+  <li><a href="#plot-data" id="toc-plot-data" class="nav-link" data-scroll-target="#plot-data">Plot Data</a></li>
+  </ul>
+</li>
   <li><a href="#citation" id="toc-citation" class="nav-link" data-scroll-target="#citation">Citation</a></li>
   <li><a href="#license" id="toc-license" class="nav-link" data-scroll-target="#license">License</a></li>
   <li><a href="#acknowledgments" id="toc-acknowledgments" class="nav-link" data-scroll-target="#acknowledgments">Acknowledgments</a></li>
@@ -243,7 +240,7 @@ div.csl-indent {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 9, 2025</p>
+      <p class="date">November 1, 2025</p>
     </div>
   </div>
   
@@ -277,7 +274,12 @@ div.csl-indent {
 <section id="source-of-data" class="level3"><h3 class="anchored" data-anchor-id="source-of-data">Source of Data</h3>
 <p>The data used in this report come from the following sources:</p>
 <ul>
-<li>Brazilian Federal Revenue Service (<a href="https://www.gov.br/receitafederal/">RFB</a>): Data on food retail establishments from the <a href="https://dados.gov.br/dados/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj">CNPJ database</a>, used for company identification.</li>
+<li>Brazilian Federal Revenue Service (<a href="https://www.gov.br/receitafederal/">RFB</a>):
+<ul>
+<li>Data on food retail establishments from the <a href="https://dados.gov.br/dados/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj">CNPJ database</a>, used for company identification.</li>
+<li>Data on <a href="https://dados.gov.br/dados/conjuntos-dados/tabela-de-rgos-e-municpios">Brazilian agencies and municipalities</a> (<em>Tabela de Órgãos e Municípios</em>).</li>
+</ul>
+</li>
 <li>Brazilian Institute of Geography and Statistics (<a href="https://www.ibge.gov.br/">IBGE</a>): Open spatial datasets of Brazilian addresses from the National Address Register for Statistical Purposes (<a href="https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html">CNEFE</a>), used for geocoding via the <a href="https://ipeagit.github.io/geocodebr/"><code>geocodebr</code></a> R package.</li>
 </ul></section><section id="data-munging" class="level3"><h3 class="anchored" data-anchor-id="data-munging">Data Munging</h3>
 <p>The data munging follow the data science workflow outlined by <span class="citation" data-cites="wickham2023e">Wickham et al. (<a href="#ref-wickham2023e" role="doc-biblioref">2023</a>)</span>, as illustrated in <a href="#fig-wickham-at-al-2023-figure-1" class="quarto-xref">Figure&nbsp;1</a>. All processes were made using the <a href="https://quarto.org/">Quarto</a> publishing system <span class="citation" data-cites="allaire">(<a href="#ref-allaire" role="doc-biblioref">Allaire et al., n.d.</a>)</span>, the <a href="https://www.r-project.org/">R programming language</a> <span class="citation" data-cites="rcoreteama">(<a href="#ref-rcoreteama" role="doc-biblioref">R Core Team, n.d.</a>)</span> and several R packages.</p>
@@ -298,71 +300,132 @@ Figure&nbsp;1: Data science workflow created by Wickham, Çetinkaya-Runde, and G
 </section></section><section id="set-the-environment" class="level2"><h2 class="anchored" data-anchor-id="set-the-environment">Set the Environment</h2>
 <section id="load-packages" class="level3"><h3 class="anchored" data-anchor-id="load-packages">Load Packages</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://danielvartan.github.io/brandr/">brandr</a></span><span class="op">)</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://r-lib.r-universe.dev/askpass">askpass</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://danielvartan.github.io/brandr/">brandr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/rasmusab/beepr">beepr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://cli.r-lib.org">cli</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://mllg.github.io/checkmate/">checkmate</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://jeroen.r-universe.dev/curl">curl</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org">dplyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://fs.r-lib.org">fs</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://ipeagit.github.io/geobr/">geobr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ipeaGIT/geocodebr">geocodebr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org">ggplot2</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://paleolimbot.github.io/ggspatial/">ggspatial</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://googlesheets4.tidyverse.org">googlesheets4</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://here.r-lib.org/">here</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/rstudio/htmltools">htmltools</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://danielvartan.github.io/lockr/">lockr</a></span><span class="op">)</span> <span class="co"># github.com/danielvartan/lockr</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://magrittr.tidyverse.org">magrittr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/r-lib/nanoparquet">nanoparquet</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://danielvartan.github.io/orbis/">orbis</a></span><span class="op">)</span> <span class="co"># github.com/danielvartan/orbis</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://docs.ropensci.org/osfr/">osfr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/">purrr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://readr.tidyverse.org">readr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://danielvartan.github.io/rutils/">rutils</a></span><span class="op">)</span> <span class="co"># github.com/danielvartan/rutils</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://rvest.tidyverse.org/">rvest</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://danielvartan.github.io/rutils/">rutils</a></span><span class="op">)</span> <span class="co"># github.com/danielvartan/rutils</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/">sf</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://stringi.gagolewski.com/">stringi</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://stringr.tidyverse.org">stringr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyr.tidyverse.org">tidyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://vroom.r-lib.org">vroom</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/r-lib/zip">zip</a></span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-</section><section id="set-functions" class="level3"><h3 class="anchored" data-anchor-id="set-functions">Set Functions</h3>
+</section><section id="set-keys" class="level3"><h3 class="anchored" data-anchor-id="set-keys">Set Keys</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">map_tibble</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">n_max</span> <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://mllg.github.io/checkmate/reference/checkCharacter.html">assert_character</a></span><span class="op">(</span><span class="va">x</span>, any.missing <span class="op">=</span> <span class="cn">FALSE</span>, min.len <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://mllg.github.io/checkmate/reference/checkCount.html">assert_count</a></span><span class="op">(</span><span class="va">n_max</span>, positive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span>  <span class="va">x</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span></span>
-<span>      \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://vroom.r-lib.org/reference/vroom.html">vroom</a></span><span class="op">(</span></span>
-<span>        file <span class="op">=</span> <span class="va">x</span>,</span>
-<span>        delim <span class="op">=</span> <span class="st">";"</span>,</span>
-<span>        col_names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>        col_types <span class="op">=</span> <span class="fu"><a href="https://readr.tidyverse.org/reference/cols.html">cols</a></span><span class="op">(</span>.default <span class="op">=</span> <span class="st">"c"</span><span class="op">)</span>,</span>
-<span>        n_max <span class="op">=</span> <span class="va">n_max</span>, <span class="co"># For testing.</span></span>
-<span>        progress <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span>      <span class="op">)</span>,</span>
-<span>      .progress <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://purrr.tidyverse.org/reference/list_c.html">list_rbind</a></span><span class="op">(</span><span class="op">)</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">osf_pat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html">Sys.getenv</a></span><span class="op">(</span><span class="st">"OSF_PAT"</span><span class="op">)</span> <span class="co"># askpass()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://docs.ropensci.org/osfr/reference/osf_auth.html">osf_auth</a></span><span class="op">(</span><span class="va">osf_pat</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">public_key</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://here.r-lib.org/reference/here.html">here</a></span><span class="op">(</span><span class="st">"_ssh"</span>, <span class="st">"id_rsa.pub"</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">private_key</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://here.r-lib.org/reference/here.html">here</a></span><span class="op">(</span><span class="st">"_ssh"</span>, <span class="st">"id_rsa"</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">password</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html">Sys.getenv</a></span><span class="op">(</span><span class="st">"ACESSOSAN_PASSWORD"</span><span class="op">)</span> <span class="co"># askpass()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section><section id="set-google-sheets-api" class="level3"><h3 class="anchored" data-anchor-id="set-google-sheets-api">Set Google Sheets API</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://googlesheets4.tidyverse.org/reference/gs4_auth.html">gs4_auth</a></span><span class="op">(</span>cache <span class="op">=</span> <span class="st">".secrets"</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section><section id="set-input-and-output-paths" class="level3"><h3 class="anchored" data-anchor-id="set-input-and-output-paths">Set Input and Output Paths</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">raw_data_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://here.r-lib.org/reference/here.html">here</a></span><span class="op">(</span><span class="st">"data-raw"</span><span class="op">)</span></span>
+<span><span class="va">data_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://here.r-lib.org/reference/here.html">here</a></span><span class="op">(</span><span class="st">"data"</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="va">raw_data_dir</span>, <span class="va">data_dir</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://fs.r-lib.org/reference/file_access.html">dir_exists</a></span><span class="op">(</span><span class="va">i</span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://fs.r-lib.org/reference/create.html">dir_create</a></span><span class="op">(</span><span class="va">i</span>, recurse <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section><section id="set-initial-variables" class="level3"><h3 class="anchored" data-anchor-id="set-initial-variables">Set Initial Variables</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">2025</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">2025</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">year</span> <span class="op">&lt;-</span> <span class="fl">2025</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">year</span> <span class="op">&lt;-</span> <span class="fl">2025</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">month</span> <span class="op">&lt;-</span> <span class="fl">1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">month</span> <span class="op">&lt;-</span> <span class="fl">1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-</section></section><section id="download-the-raw-data" class="level2"><h2 class="anchored" data-anchor-id="download-the-raw-data">Download the Raw Data</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">municipalities</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span> <span class="co"># IBGE Codes</span></span>
+<span>  <span class="fl">3550308</span> <span class="co"># , # São Paulo</span></span>
+<span>  <span class="co"># 2507507, # João Pessoa</span></span>
+<span>  <span class="co"># 3106200, # Belo Horizonte</span></span>
+<span>  <span class="co"># 4314902, # Porto Alegre</span></span>
+<span>  <span class="co"># 1721000, # Palmas</span></span>
+<span>  <span class="co"># 5300108, # Brasília</span></span>
+<span>  <span class="co"># 5208707  # Goiânia</span></span>
+<span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section></section><section id="download-cnae-classification-table" class="level2"><h2 class="anchored" data-anchor-id="download-cnae-classification-table">Download CNAE Classification Table</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">classification_data</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fu"><a href="https://googlesheets4.tidyverse.org/reference/range_read.html">read_sheet</a></span><span class="op">(</span></span>
+<span>    ss <span class="op">=</span> <span class="st">"1ipCw2FM3aUOdRd4w55J5SUEgXDCogxWZF-NZi0A-o_4"</span>,</span>
+<span>    sheet <span class="op">=</span> <span class="st">"Dataset"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span></span>
+<span>    g0 <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html">if_else</a></span><span class="op">(</span></span>
+<span>      <span class="va">g1_g2</span> <span class="op">==</span> <span class="cn">TRUE</span> <span class="op">&amp;</span> <span class="va">g3</span> <span class="op">==</span> <span class="cn">FALSE</span> <span class="op">&amp;</span> <span class="va">g4</span> <span class="op">==</span> <span class="cn">FALSE</span>,</span>
+<span>      <span class="cn">TRUE</span>,</span>
+<span>      <span class="cn">FALSE</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="co">#&gt; ✔ Reading from "Locais-Nova By CNAE".</span></span>
+<span><span class="co">#&gt; ✔ Range ''Dataset''.</span></span>
+<span></span>
+<span><span class="va">classification_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Rows: 540</span></span>
+<span><span class="co">#&gt; Columns: 7</span></span>
+<span><span class="co">#&gt; $ cnae         &lt;chr&gt; "4711302", "5611201", "4722902", "4721102", "4721101",…</span></span>
+<span><span class="co">#&gt; $ description  &lt;chr&gt; "Supermarket 1", "Restaurant", "Fish Market", "Bakery …</span></span>
+<span><span class="co">#&gt; $ federal_unit &lt;chr&gt; "AC", "AC", "AC", "AC", "AC", "AC", "AC", "AC", "AC", …</span></span>
+<span><span class="co">#&gt; $ g0           &lt;lgl&gt; FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, …</span></span>
+<span><span class="co">#&gt; $ g1_g2        &lt;lgl&gt; TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, F…</span></span>
+<span><span class="co">#&gt; $ g3           &lt;lgl&gt; FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, F…</span></span>
+<span><span class="co">#&gt; $ g4           &lt;lgl&gt; TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section><section id="download-data-on-brazilian-agencies-and-municipalities" class="level2"><h2 class="anchored" data-anchor-id="download-data-on-brazilian-agencies-and-municipalities">Download Data on Brazilian Agencies and Municipalities</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">url</span> <span class="op">&lt;-</span> <span class="st">"https://www.gov.br/receitafederal/dados/municipios.csv"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://jeroen.r-universe.dev/curl/reference/curl_download.html">curl_download</a></span><span class="op">(</span><span class="va">url</span>, destfile <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">raw_data_dir</span>, <span class="st">"municipios.csv"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section><section id="download-the-rfb-raw-data" class="level2"><h2 class="anchored" data-anchor-id="download-the-rfb-raw-data">Download the RFB Raw Data</h2>
 <section id="set-parameters" class="level3"><h3 class="anchored" data-anchor-id="set-parameters">Set Parameters</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">raw_data_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://here.r-lib.org/reference/here.html">here</a></span><span class="op">(</span><span class="st">"data-raw"</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://fs.r-lib.org/reference/file_access.html">dir_exists</a></span><span class="op">(</span><span class="va">raw_data_dir</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://fs.r-lib.org/reference/delete.html">dir_delete</a></span><span class="op">(</span><span class="va">raw_data_dir</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://fs.r-lib.org/reference/create.html">dir_create</a></span><span class="op">(</span><span class="va">raw_data_dir</span>, recurse <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+</section><section id="download-files" class="level3"><h3 class="anchored" data-anchor-id="download-files">Download Files</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://fs.r-lib.org/reference/file_access.html">dir_exists</a></span><span class="op">(</span><span class="va">raw_data_dir</span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://fs.r-lib.org/reference/delete.html">dir_delete</a></span><span class="op">(</span><span class="va">raw_data_dir</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://fs.r-lib.org/reference/file_access.html">dir_exists</a></span><span class="op">(</span><span class="va">raw_data_dir</span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://fs.r-lib.org/reference/create.html">dir_create</a></span><span class="op">(</span><span class="va">raw_data_dir</span>, recurse <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</section><section id="download-file" class="level3"><h3 class="anchored" data-anchor-id="download-file">Download File</h3>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span> <span class="co"># Don´t change the function!</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span> <span class="co"># Don´t change the function!</span></span>
 <span>    <span class="st">"https://arquivos.receitafederal.gov.br"</span>,</span>
 <span>    <span class="st">"dados"</span>,</span>
 <span>    <span class="st">"cnpj"</span>,</span>
@@ -370,7 +433,7 @@ Figure&nbsp;1: Data science workflow created by Wickham, Çetinkaya-Runde, and G
 <span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">path</span> <span class="op">&lt;-</span> <span class="va">root</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="st">"2025-"</span>, <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_pad.html">str_pad</a></span><span class="op">(</span><span class="va">month</span>, <span class="fl">2</span>, pad <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">path</span> <span class="op">&lt;-</span> <span class="va">root</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="st">"2025-"</span>, <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_pad.html">str_pad</a></span><span class="op">(</span><span class="va">month</span>, <span class="fl">2</span>, pad <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">urls</span> <span class="op">&lt;-</span></span>
 <span>  <span class="va">path</span> <span class="op">|&gt;</span></span>
@@ -381,334 +444,523 @@ Figure&nbsp;1: Data science workflow created by Wickham, Çetinkaya-Runde, and G
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">path</span>, <span class="va">.</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">urls</span> <span class="op">|&gt;</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">urls</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map_dbl</a></span><span class="op">(</span>.f <span class="op">=</span> <span class="va">get_file_size</span>, .progress <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://fs.r-lib.org/reference/fs_bytes.html">as_fs_bytes</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; 6.26G</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">urls</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://danielvartan.github.io/rutils/reference/download_file.html">download_file</a></span><span class="op">(</span>dir <span class="op">=</span> <span class="va">raw_data_dir</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">urls</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://danielvartan.github.io/rutils/reference/download_file.html">download_file</a></span><span class="op">(</span>dir <span class="op">=</span> <span class="va">raw_data_dir</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-</section></section><section id="unzip-data" class="level2"><h2 class="anchored" data-anchor-id="unzip-data">Unzip Data</h2>
+</section><section id="unzip-files" class="level3"><h3 class="anchored" data-anchor-id="unzip-files">Unzip Files</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">zip_files</span> <span class="op">&lt;-</span> <span class="va">raw_data_dir</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html">dir_ls</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"file"</span>, regexp <span class="op">=</span> <span class="st">"\\.zip$"</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">zip_files</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://r-lib.github.io/zip/reference/unzip.html">unzip</a></span><span class="op">(</span><span class="va">x</span>, exdir <span class="op">=</span> <span class="va">raw_data_dir</span><span class="op">)</span>, .progress <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">zip_files</span> <span class="op">&lt;-</span> <span class="va">raw_data_dir</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html">dir_ls</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"file"</span>, regexp <span class="op">=</span> <span class="st">"\\.zip$"</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">zip_files</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://fs.r-lib.org/reference/delete.html">file_delete</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">zip_files</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://r-lib.github.io/zip/reference/unzip.html">unzip</a></span><span class="op">(</span><span class="va">x</span>, exdir <span class="op">=</span> <span class="va">raw_data_dir</span><span class="op">)</span>, .progress <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">zip_files</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://fs.r-lib.org/reference/delete.html">file_delete</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section></section><section id="read-tom-municipality-codes" class="level2"><h2 class="anchored" data-anchor-id="read-tom-municipality-codes">Read TOM Municipality Codes</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">municipalities_tom_data</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">raw_data_dir</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://fs.r-lib.org/reference/path.html">path</a></span><span class="op">(</span><span class="st">"municipios.csv"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://readr.tidyverse.org/reference/read_delim.html">read_delim</a></span><span class="op">(</span></span>
+<span>    delim <span class="op">=</span> <span class="st">";"</span>,</span>
+<span>    col_names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    col_types <span class="op">=</span> <span class="fu"><a href="https://readr.tidyverse.org/reference/cols.html">cols</a></span><span class="op">(</span>.default <span class="op">=</span> <span class="st">"c"</span><span class="op">)</span>,</span>
+<span>    progress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html">slice</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html">across</a></span><span class="op">(</span></span>
+<span>      .cols <span class="op">=</span> <span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html">everything</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>      .fns <span class="op">=</span> \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/iconv.html">iconv</a></span><span class="op">(</span><span class="va">x</span>, from <span class="op">=</span> <span class="st">"Windows-1252"</span>, to <span class="op">=</span> <span class="st">"UTF-8"</span><span class="op">)</span> <span class="co"># iconvlist()</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename_with</a></span><span class="op">(</span></span>
+<span>    \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"municipality_code_tom"</span>,</span>
+<span>    <span class="st">"municipality_code_ibge"</span>,</span>
+<span>    <span class="st">"municipality_tom"</span>,</span>
+<span>    <span class="st">"municipality_ibge"</span>,</span>
+<span>    <span class="st">"uf"</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span></span>
+<span>    municipality_code_tom <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html">as.integer</a></span><span class="op">(</span><span class="va">municipality_code_tom</span><span class="op">)</span>,</span>
+<span>    municipality_code_ibge <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html">as.integer</a></span><span class="op">(</span><span class="va">municipality_code_ibge</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">municipalities_tom_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Rows: 5,571</span></span>
+<span><span class="co">#&gt; Columns: 5</span></span>
+<span><span class="co">#&gt; $ municipality_code_tom  &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 1…</span></span>
+<span><span class="co">#&gt; $ municipality_code_ibge &lt;int&gt; 1100106, 1100379, 1100205, 1100452, 1100122,…</span></span>
+<span><span class="co">#&gt; $ municipality_tom       &lt;chr&gt; "GUAJARÁ-MIRIM", "ALTO ALEGRE DOS PARECIS", …</span></span>
+<span><span class="co">#&gt; $ municipality_ibge      &lt;chr&gt; "Guajará-Mirim", "Alto Alegre dos Parecis", …</span></span>
+<span><span class="co">#&gt; $ uf                     &lt;chr&gt; "RO", "RO", "RO", "RO", "RO", "RO", "RO", "R…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section><section id="replace-ibge-municipality-codes-with-tom-codes" class="level2"><h2 class="anchored" data-anchor-id="replace-ibge-municipality-codes-with-tom-codes">Replace IBGE Municipality Codes with TOM Codes</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">municipalities</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">municipalities_tom_data</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">municipality_code_ibge</span> <span class="op"><a href="https://rdrr.io/r/base/match.html">%in%</a></span> <span class="va">municipalities</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/pull.html">pull</a></span><span class="op">(</span><span class="va">municipality_code_tom</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">municipalities</span></span>
+<span><span class="co">#&gt; [1] 7107</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section><section id="read-the-data" class="level2"><h2 class="anchored" data-anchor-id="read-the-data">Read the Data</h2>
-<section id="set-parameters-1" class="level3"><h3 class="anchored" data-anchor-id="set-parameters-1">Set Parameters</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">n_max</span> <span class="op">&lt;-</span> <span class="fl">10</span> <span class="co"># For testing.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</section><section id="companies" class="level3"><h3 class="anchored" data-anchor-id="companies">Companies</h3>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">company_data</span> <span class="op">&lt;-</span></span>
-<span>  <span class="va">raw_data_dir</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html">dir_ls</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"file"</span>, regexp <span class="op">=</span> <span class="st">"\\.EMPRECSV$"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">map_tibble</span><span class="op">(</span>n_max <span class="op">=</span> <span class="va">n_max</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename_with</a></span><span class="op">(</span></span>
-<span>    \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
-<span>      <span class="st">"cnpj_basic"</span>,</span>
-<span>      <span class="st">"company_name"</span>,</span>
-<span>      <span class="st">"legal_nature"</span>,</span>
-<span>      <span class="st">"responsible_qualification"</span>,</span>
-<span>      <span class="st">"company_share_capital"</span>,</span>
-<span>      <span class="st">"company_size"</span>,</span>
-<span>      <span class="st">"responsible_federal_entity"</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">company_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Rows: 100</span></span>
-<span><span class="co">#&gt; Columns: 7</span></span>
-<span><span class="co">#&gt; $ cnpj_basic                 &lt;chr&gt; "41273592", "41273593", "41273594", "412…</span></span>
-<span><span class="co">#&gt; $ company_name               &lt;chr&gt; "41.273.592 HELIO DE JESUS PEREIRA", "JU…</span></span>
-<span><span class="co">#&gt; $ legal_nature               &lt;chr&gt; "2135", "2135", "2135", "2135", "2135", …</span></span>
-<span><span class="co">#&gt; $ responsible_qualification  &lt;chr&gt; "50", "50", "50", "50", "50", "50", "50"…</span></span>
-<span><span class="co">#&gt; $ company_share_capital      &lt;chr&gt; "30000,00", "3000,00", "5000,00", "3000,…</span></span>
-<span><span class="co">#&gt; $ company_size               &lt;chr&gt; "01", "01", "01", "01", "01", "01", "01"…</span></span>
-<span><span class="co">#&gt; $ responsible_federal_entity &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</section><section id="establishments" class="level3"><h3 class="anchored" data-anchor-id="establishments">Establishments</h3>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">&lt;-</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">&lt;-</span></span>
 <span>  <span class="va">raw_data_dir</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html">dir_ls</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"file"</span>, regexp <span class="op">=</span> <span class="st">"\\.ESTABELE$"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">map_tibble</span><span class="op">(</span>n_max <span class="op">=</span> <span class="va">n_max</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename_with</a></span><span class="op">(</span></span>
-<span>    \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
-<span>      <span class="st">"cnpj_basic"</span>,</span>
-<span>      <span class="st">"cnpj_order"</span>,</span>
-<span>      <span class="st">"cnpj_dv"</span>,</span>
-<span>      <span class="st">"branch_identifier"</span>,</span>
-<span>      <span class="st">"trade_name"</span>,</span>
-<span>      <span class="st">"registration_status"</span>,</span>
-<span>      <span class="st">"registration_status_date"</span>,</span>
-<span>      <span class="st">"registration_status_reason"</span>,</span>
-<span>      <span class="st">"foreign_city_name"</span>,</span>
-<span>      <span class="st">"country"</span>,</span>
-<span>      <span class="st">"start_date"</span>,</span>
-<span>      <span class="st">"cnae_primary"</span>,</span>
-<span>      <span class="st">"cnae_secondary"</span>,</span>
-<span>      <span class="st">"street_type"</span>,</span>
-<span>      <span class="st">"street_name"</span>,</span>
-<span>      <span class="st">"number"</span>,</span>
-<span>      <span class="st">"address_complement"</span>,</span>
-<span>      <span class="st">"neighborhood"</span>,</span>
-<span>      <span class="st">"postal_code"</span>,</span>
-<span>      <span class="st">"federal_unit"</span>,</span>
-<span>      <span class="st">"municipality_tom"</span>,</span>
-<span>      <span class="st">"phone_area_code_1"</span>,</span>
-<span>      <span class="st">"phone_number_1"</span>,</span>
-<span>      <span class="st">"phone_area_code_2"</span>,</span>
-<span>      <span class="st">"phone_number_2"</span>,</span>
-<span>      <span class="st">"fax_area_code"</span>,</span>
-<span>      <span class="st">"fax_number"</span>,</span>
-<span>      <span class="st">"email"</span>,</span>
-<span>      <span class="st">"special_status"</span>,</span>
-<span>      <span class="st">"special_status_date"</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span></span>
+<span>    <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
+<span>      <span class="fu"><a href="https://vroom.r-lib.org/reference/vroom.html">vroom</a></span><span class="op">(</span></span>
+<span>        <span class="co"># Uses `pipe()` and `awk` to filter data to avoid loading the</span></span>
+<span>        <span class="co"># entire file into memory.</span></span>
+<span>        file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/connections.html">pipe</a></span><span class="op">(</span></span>
+<span>          <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span></span>
+<span>            <span class="st">"awk "</span>,</span>
+<span>            <span class="st">"-F "</span>,</span>
+<span>            <span class="st">"';' "</span>,</span>
+<span>            <span class="st">"'{ "</span>,</span>
+<span>            <span class="st">"if ("</span>,</span>
+<span>            <span class="st">'$6 == "'</span>, <span class="st">'\\"02\\"'</span>, <span class="st">'"'</span>,</span>
+<span>            <span class="st">" &amp;&amp; "</span>,</span>
+<span>            <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="st">'$21 == "\\"'</span>, <span class="va">municipalities</span>, <span class="st">'\\""'</span>, collapse <span class="op">=</span> <span class="st">" || "</span><span class="op">)</span>,</span>
+<span>            <span class="st">") "</span>,</span>
+<span>            <span class="st">"print"</span>,</span>
+<span>            <span class="st">" }' "</span>,</span>
+<span>            <span class="va">x</span></span>
+<span>          <span class="op">)</span></span>
+<span>        <span class="op">)</span>,</span>
+<span>        delim <span class="op">=</span> <span class="st">";"</span>,</span>
+<span>        col_names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
+<span>          <span class="st">"cnpj_basic"</span>,</span>
+<span>          <span class="st">"cnpj_order"</span>,</span>
+<span>          <span class="st">"cnpj_dv"</span>,</span>
+<span>          <span class="st">"branch_identifier"</span>,</span>
+<span>          <span class="st">"trade_name"</span>,</span>
+<span>          <span class="st">"registration_status"</span>,</span>
+<span>          <span class="st">"registration_status_date"</span>,</span>
+<span>          <span class="st">"registration_status_reason"</span>,</span>
+<span>          <span class="st">"foreign_city_name"</span>,</span>
+<span>          <span class="st">"country"</span>,</span>
+<span>          <span class="st">"start_date"</span>,</span>
+<span>          <span class="st">"cnae_primary"</span>,</span>
+<span>          <span class="st">"cnae_secondary"</span>,</span>
+<span>          <span class="st">"street_type"</span>,</span>
+<span>          <span class="st">"street_name"</span>,</span>
+<span>          <span class="st">"number"</span>,</span>
+<span>          <span class="st">"address_complement"</span>,</span>
+<span>          <span class="st">"neighborhood"</span>,</span>
+<span>          <span class="st">"postal_code"</span>,</span>
+<span>          <span class="st">"federal_unit"</span>,</span>
+<span>          <span class="st">"municipality_code_tom"</span>,</span>
+<span>          <span class="st">"phone_area_code_1"</span>,</span>
+<span>          <span class="st">"phone_number_1"</span>,</span>
+<span>          <span class="st">"phone_area_code_2"</span>,</span>
+<span>          <span class="st">"phone_number_2"</span>,</span>
+<span>          <span class="st">"fax_area_code"</span>,</span>
+<span>          <span class="st">"fax_number"</span>,</span>
+<span>          <span class="st">"email"</span>,</span>
+<span>          <span class="st">"special_status"</span>,</span>
+<span>          <span class="st">"special_status_date"</span></span>
+<span>        <span class="op">)</span>,</span>
+<span>        col_types <span class="op">=</span> <span class="fu"><a href="https://readr.tidyverse.org/reference/cols.html">cols</a></span><span class="op">(</span>.default <span class="op">=</span> <span class="st">"c"</span><span class="op">)</span>,</span>
+<span>        col_select <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
+<span>          <span class="st">"cnpj_basic"</span>, <span class="st">"cnpj_order"</span>, <span class="st">"cnpj_dv"</span>, <span class="st">"cnae_primary"</span>,</span>
+<span>          <span class="st">"federal_unit"</span>, <span class="st">"municipality_code_tom"</span>, <span class="st">"street_type"</span>,</span>
+<span>          <span class="st">"street_name"</span>, <span class="st">"number"</span>, <span class="st">"address_complement"</span>, <span class="st">"neighborhood"</span>,</span>
+<span>          <span class="st">"postal_code"</span></span>
+<span>        <span class="op">)</span>,</span>
+<span>        show_col_types <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>      <span class="op">)</span></span>
+<span>    <span class="op">}</span>,</span>
+<span>    .progress <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://purrr.tidyverse.org/reference/list_c.html">list_rbind</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  ■■■■                              10% |  ETA:  5m</span></span>
+<span><span class="co">#&gt;  ■■■■■■■                           20% |  ETA:  3m</span></span>
+<span><span class="co">#&gt;  ■■■■■■■■■■                        30% |  ETA:  2m</span></span>
+<span><span class="co">#&gt;  ■■■■■■■■■■■■■                     40% |  ETA:  1m</span></span>
+<span><span class="co">#&gt;  ■■■■■■■■■■■■■■■■                  50% |  ETA:  1m</span></span>
+<span><span class="co">#&gt;  ■■■■■■■■■■■■■■■■■■■               60% |  ETA: 48s</span></span>
+<span><span class="co">#&gt;  ■■■■■■■■■■■■■■■■■■■■■■            70% |  ETA: 35s</span></span>
+<span><span class="co">#&gt;  ■■■■■■■■■■■■■■■■■■■■■■■■■         80% |  ETA: 23s</span></span>
+<span><span class="co">#&gt;  ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% |  ETA: 11s</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Rows: 100</span></span>
-<span><span class="co">#&gt; Columns: 30</span></span>
-<span><span class="co">#&gt; $ cnpj_basic                 &lt;chr&gt; "37220018", "36068186", "37318263", "373…</span></span>
-<span><span class="co">#&gt; $ cnpj_order                 &lt;chr&gt; "0001", "0001", "0001", "0001", "0001", …</span></span>
-<span><span class="co">#&gt; $ cnpj_dv                    &lt;chr&gt; "09", "68", "53", "25", "70", "98", "99"…</span></span>
-<span><span class="co">#&gt; $ branch_identifier          &lt;chr&gt; "1", "1", "1", "1", "1", "1", "2", "1", …</span></span>
-<span><span class="co">#&gt; $ trade_name                 &lt;chr&gt; "ANTONIO HERCULANO DA MOTA", NA, NA, NA,…</span></span>
-<span><span class="co">#&gt; $ registration_status        &lt;chr&gt; "08", "02", "02", "08", "02", "04", "08"…</span></span>
-<span><span class="co">#&gt; $ registration_status_date   &lt;chr&gt; "20230530", "20200120", "20200604", "202…</span></span>
-<span><span class="co">#&gt; $ registration_status_reason &lt;chr&gt; "01", "00", "00", "01", "00", "63", "01"…</span></span>
-<span><span class="co">#&gt; $ foreign_city_name          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …</span></span>
-<span><span class="co">#&gt; $ country                    &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …</span></span>
-<span><span class="co">#&gt; $ start_date                 &lt;chr&gt; "20200525", "20200120", "20200604", "202…</span></span>
-<span><span class="co">#&gt; $ cnae_primary               &lt;chr&gt; "8712300", "4330499", "1629301", "522909…</span></span>
-<span><span class="co">#&gt; $ cnae_secondary             &lt;chr&gt; NA, NA, "3101200", NA, "4781400,8599604,…</span></span>
-<span><span class="co">#&gt; $ street_type                &lt;chr&gt; "RUA", "RUA", "RUA", "RUA", "RUA", "TRAV…</span></span>
-<span><span class="co">#&gt; $ street_name                &lt;chr&gt; "ARCO-IRIS", "JOSE PEREIRA MARQUES", "JO…</span></span>
-<span><span class="co">#&gt; $ number                     &lt;chr&gt; "97", "390", "568", "441", "201/19", "36…</span></span>
-<span><span class="co">#&gt; $ address_complement         &lt;chr&gt; NA, NA, NA, "CASA 03", "SALA 03", NA, NA…</span></span>
-<span><span class="co">#&gt; $ neighborhood               &lt;chr&gt; "PARQUE BOTUJURU", "JARDIM COUNTRY CLUB"…</span></span>
-<span><span class="co">#&gt; $ postal_code                &lt;chr&gt; "09821090", "37704313", "09920140", "097…</span></span>
-<span><span class="co">#&gt; $ federal_unit               &lt;chr&gt; "SP", "MG", "SP", "SP", "SP", "SP", "MG"…</span></span>
-<span><span class="co">#&gt; $ municipality_tom           &lt;chr&gt; "7075", "5035", "6377", "7075", "7075", …</span></span>
-<span><span class="co">#&gt; $ phone_area_code_1          &lt;chr&gt; "11", "35", "11", "11", "11", "11", "35"…</span></span>
-<span><span class="co">#&gt; $ phone_number_1             &lt;chr&gt; "41014141", "99939878", "80594733", "433…</span></span>
-<span><span class="co">#&gt; $ phone_area_code_2          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …</span></span>
-<span><span class="co">#&gt; $ phone_number_2             &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …</span></span>
-<span><span class="co">#&gt; $ fax_area_code              &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …</span></span>
-<span><span class="co">#&gt; $ fax_number                 &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …</span></span>
-<span><span class="co">#&gt; $ email                      &lt;chr&gt; "HERCULANOANTONIO23@GMAIL.COM", "ALEVIDR…</span></span>
-<span><span class="co">#&gt; $ special_status             &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …</span></span>
-<span><span class="co">#&gt; $ special_status_date        &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Rows: 2,199,116</span></span>
+<span><span class="co">#&gt; Columns: 12</span></span>
+<span><span class="co">#&gt; $ cnpj_basic            &lt;chr&gt; "33522741", "30943196", "37895692", "35228854…</span></span>
+<span><span class="co">#&gt; $ cnpj_order            &lt;chr&gt; "0001", "0001", "0001", "0001", "0001", "0001…</span></span>
+<span><span class="co">#&gt; $ cnpj_dv               &lt;chr&gt; "91", "19", "93", "04", "60", "57", "50", "98…</span></span>
+<span><span class="co">#&gt; $ cnae_primary          &lt;chr&gt; "4520001", "3101200", "4781400", "9602502", "…</span></span>
+<span><span class="co">#&gt; $ federal_unit          &lt;chr&gt; "SP", "SP", "SP", "SP", "SP", "SP", "SP", "SP…</span></span>
+<span><span class="co">#&gt; $ municipality_code_tom &lt;chr&gt; "7107", "7107", "7107", "7107", "7107", "7107…</span></span>
+<span><span class="co">#&gt; $ street_type           &lt;chr&gt; "RUA", "RUA", "RUA", "AVENIDA", "RUA", "RUA",…</span></span>
+<span><span class="co">#&gt; $ street_name           &lt;chr&gt; "WERNER VON SIEMENS", "CARLOS VILLALVA", "BAD…</span></span>
+<span><span class="co">#&gt; $ number                &lt;chr&gt; "111", "151", "136", "105", "404", "343", "70…</span></span>
+<span><span class="co">#&gt; $ address_complement    &lt;chr&gt; NA, "APT   22", NA, "EDIF THERA BERRINI OFFIC…</span></span>
+<span><span class="co">#&gt; $ neighborhood          &lt;chr&gt; "LAPA DE BAIXO", "VILA GUARANI (Z SUL)", "JAR…</span></span>
+<span><span class="co">#&gt; $ postal_code           &lt;chr&gt; "05069900", "04307000", "03715070", "04571900…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-</section><section id="shareholders" class="level3"><h3 class="anchored" data-anchor-id="shareholders">Shareholders</h3>
+</section><section id="filter-the-data" class="level2"><h2 class="anchored" data-anchor-id="filter-the-data">Filter the Data</h2>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">shareholder_data</span> <span class="op">&lt;-</span></span>
-<span>  <span class="va">raw_data_dir</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html">dir_ls</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"file"</span>, regexp <span class="op">=</span> <span class="st">"\\.SOCIOCSV$"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">map_tibble</span><span class="op">(</span>n_max <span class="op">=</span> <span class="va">n_max</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename_with</a></span><span class="op">(</span></span>
-<span>    \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
-<span>      <span class="st">"cnpj_basic"</span>,</span>
-<span>      <span class="st">"shareholder_identifier"</span>,</span>
-<span>      <span class="st">"shareholder_name"</span>,</span>
-<span>      <span class="st">"shareholder_cpf_cnpj"</span>,</span>
-<span>      <span class="st">"shareholder_qualification"</span>,</span>
-<span>      <span class="st">"entry_date_in_company"</span>,</span>
-<span>      <span class="st">"country"</span>,</span>
-<span>      <span class="st">"representative_cpf"</span>,</span>
-<span>      <span class="st">"representative_name"</span>,</span>
-<span>      <span class="st">"representative_qualification"</span>,</span>
-<span>      <span class="st">"age_range"</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">establishment_data</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>cnae <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_pad.html">str_pad</a></span><span class="op">(</span><span class="va">cnae_primary</span>, <span class="fl">7</span>, pad <span class="op">=</span> <span class="st">"0"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html">left_join</a></span><span class="op">(</span><span class="va">classification_data</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"cnae"</span>, <span class="st">"federal_unit"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://danielvartan.github.io/rutils/reference/drop_na.html">drop_na</a></span><span class="op">(</span><span class="va">g0</span>, <span class="va">g1_g2</span>, <span class="va">g3</span>, <span class="va">g4</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">shareholder_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Rows: 100</span></span>
-<span><span class="co">#&gt; Columns: 11</span></span>
-<span><span class="co">#&gt; $ cnpj_basic                   &lt;chr&gt; "66011180", "66011180", "85061877", "8…</span></span>
-<span><span class="co">#&gt; $ shareholder_identifier       &lt;chr&gt; "2", "2", "2", "2", "2", "2", "2", "2"…</span></span>
-<span><span class="co">#&gt; $ shareholder_name             &lt;chr&gt; "CLAUDIO RONDINI", "MARIA APARECIDA QU…</span></span>
-<span><span class="co">#&gt; $ shareholder_cpf_cnpj         &lt;chr&gt; "***887038**", "***933348**", "***5219…</span></span>
-<span><span class="co">#&gt; $ shareholder_qualification    &lt;chr&gt; "49", "22", "49", "22", "49", "22", "4…</span></span>
-<span><span class="co">#&gt; $ entry_date_in_company        &lt;chr&gt; "20011126", "20050618", "20060202", "2…</span></span>
-<span><span class="co">#&gt; $ country                      &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…</span></span>
-<span><span class="co">#&gt; $ representative_cpf           &lt;chr&gt; "***000000**", "***000000**", "***0000…</span></span>
-<span><span class="co">#&gt; $ representative_name          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…</span></span>
-<span><span class="co">#&gt; $ representative_qualification &lt;chr&gt; "00", "00", "00", "00", "00", "00", "0…</span></span>
-<span><span class="co">#&gt; $ age_range                    &lt;chr&gt; "8", "7", "4", "5", "5", "5", "8", "7"…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Rows: 147,096</span></span>
+<span><span class="co">#&gt; Columns: 18</span></span>
+<span><span class="co">#&gt; $ cnpj_basic            &lt;chr&gt; "37855854", "37857237", "37863142", "37868873…</span></span>
+<span><span class="co">#&gt; $ cnpj_order            &lt;chr&gt; "0001", "0001", "0001", "0001", "0001", "0001…</span></span>
+<span><span class="co">#&gt; $ cnpj_dv               &lt;chr&gt; "60", "01", "92", "20", "22", "80", "04", "43…</span></span>
+<span><span class="co">#&gt; $ cnae_primary          &lt;chr&gt; "5620104", "5620104", "5620104", "5620104", "…</span></span>
+<span><span class="co">#&gt; $ federal_unit          &lt;chr&gt; "SP", "SP", "SP", "SP", "SP", "SP", "SP", "SP…</span></span>
+<span><span class="co">#&gt; $ municipality_code_tom &lt;chr&gt; "7107", "7107", "7107", "7107", "7107", "7107…</span></span>
+<span><span class="co">#&gt; $ street_type           &lt;chr&gt; "RUA", "RUA", "RUA", "RUA", "RUA", "RUA", "RU…</span></span>
+<span><span class="co">#&gt; $ street_name           &lt;chr&gt; "DO TRABALHO", "GIOVANNI DI PAOLO", "ANTONIO …</span></span>
+<span><span class="co">#&gt; $ number                &lt;chr&gt; "404", "155", "115", "155", "61", "86", "208"…</span></span>
+<span><span class="co">#&gt; $ address_complement    &lt;chr&gt; "CONJ 11", NA, NA, "CONJ 142", NA, NA, NA, "F…</span></span>
+<span><span class="co">#&gt; $ neighborhood          &lt;chr&gt; "VILA NOVA SAVOIA", "AGUA FUNDA", "JARDIM ITA…</span></span>
+<span><span class="co">#&gt; $ postal_code           &lt;chr&gt; "03531010", "04156100", "04386020", "03084030…</span></span>
+<span><span class="co">#&gt; $ cnae                  &lt;chr&gt; "5620104", "5620104", "5620104", "5620104", "…</span></span>
+<span><span class="co">#&gt; $ description           &lt;chr&gt; "Home‑Meal Delivery", "Home‑Meal Delivery", "…</span></span>
+<span><span class="co">#&gt; $ g0                    &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALS…</span></span>
+<span><span class="co">#&gt; $ g1_g2                 &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALS…</span></span>
+<span><span class="co">#&gt; $ g3                    &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL…</span></span>
+<span><span class="co">#&gt; $ g4                    &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TR…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-</section><section id="shareholder-qualifications" class="level3"><h3 class="anchored" data-anchor-id="shareholder-qualifications">Shareholder Qualifications</h3>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">shareholder_qualification_data</span> <span class="op">&lt;-</span></span>
-<span>  <span class="va">raw_data_dir</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html">dir_ls</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"file"</span>, regexp <span class="op">=</span> <span class="st">"\\.QUALSCSV$"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">map_tibble</span><span class="op">(</span>n_max <span class="op">=</span> <span class="va">n_max</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename_with</a></span><span class="op">(</span></span>
-<span>    \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
-<span>      <span class="st">"shareholder_qualification_code"</span>,</span>
-<span>      <span class="st">"shareholder_qualification"</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">shareholder_qualification_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Rows: 10</span></span>
-<span><span class="co">#&gt; Columns: 2</span></span>
-<span><span class="co">#&gt; $ shareholder_qualification_code &lt;chr&gt; "00", "05", "08", "09", "10", "11", …</span></span>
-<span><span class="co">#&gt; $ shareholder_qualification      &lt;chr&gt; "N\xe3o informada", "Administrador",…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</section><section id="cnae" class="level3"><h3 class="anchored" data-anchor-id="cnae">CNAE</h3>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">cnae_data</span> <span class="op">&lt;-</span></span>
-<span>  <span class="va">raw_data_dir</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html">dir_ls</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"file"</span>, regexp <span class="op">=</span> <span class="st">"\\.CNAECSV$"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">map_tibble</span><span class="op">(</span>n_max <span class="op">=</span> <span class="va">n_max</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename_with</a></span><span class="op">(</span></span>
-<span>    \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"cnae_code"</span>,</span>
-<span>    <span class="st">"cnae_description"</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">cnae_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Rows: 10</span></span>
-<span><span class="co">#&gt; Columns: 2</span></span>
-<span><span class="co">#&gt; $ cnae_code        &lt;chr&gt; "0111301", "0111302", "0111303", "0111399", "01121…</span></span>
-<span><span class="co">#&gt; $ cnae_description &lt;chr&gt; "Cultivo de arroz", "Cultivo de milho", "Cultivo d…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</section><section id="simples" class="level3"><h3 class="anchored" data-anchor-id="simples">Simples</h3>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">simples_data</span> <span class="op">&lt;-</span></span>
-<span>  <span class="va">raw_data_dir</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html">dir_ls</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"file"</span>, regexp <span class="op">=</span> <span class="st">"SIMPLES.CSV"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">map_tibble</span><span class="op">(</span>n_max <span class="op">=</span> <span class="va">n_max</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename_with</a></span><span class="op">(</span></span>
-<span>    \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
-<span>      <span class="st">"cnpj_basic"</span>,</span>
-<span>      <span class="st">"simples"</span>,</span>
-<span>      <span class="st">"simples_option_date"</span>,</span>
-<span>      <span class="st">"simples_exclusion_date"</span>,</span>
-<span>      <span class="st">"mei"</span>,</span>
-<span>      <span class="st">"mei_option_date"</span>,</span>
-<span>      <span class="st">"mei_exclusion_date"</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">simples_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Rows: 10</span></span>
-<span><span class="co">#&gt; Columns: 7</span></span>
-<span><span class="co">#&gt; $ cnpj_basic             &lt;chr&gt; "00000000", "00000006", "00000008", "0000001…</span></span>
-<span><span class="co">#&gt; $ simples                &lt;chr&gt; "N", "N", "N", "S", "N", "N", "N", "S", "N",…</span></span>
-<span><span class="co">#&gt; $ simples_option_date    &lt;chr&gt; "20070701", "20180101", "20140101", "2007070…</span></span>
-<span><span class="co">#&gt; $ simples_exclusion_date &lt;chr&gt; "20070701", "20191231", "20211231", "0000000…</span></span>
-<span><span class="co">#&gt; $ mei                    &lt;chr&gt; "N", "N", "N", "N", "N", "N", "N", "N", "N",…</span></span>
-<span><span class="co">#&gt; $ mei_option_date        &lt;chr&gt; "20090701", "00000000", "00000000", "0000000…</span></span>
-<span><span class="co">#&gt; $ mei_exclusion_date     &lt;chr&gt; "20090701", "00000000", "00000000", "0000000…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</section><section id="legal-nature" class="level3"><h3 class="anchored" data-anchor-id="legal-nature">Legal Nature</h3>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">legal_nature_data</span> <span class="op">&lt;-</span></span>
-<span>  <span class="va">raw_data_dir</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html">dir_ls</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"file"</span>, regexp <span class="op">=</span> <span class="st">"\\.NATJUCSV$"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">map_tibble</span><span class="op">(</span>n_max <span class="op">=</span> <span class="va">n_max</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename_with</a></span><span class="op">(</span></span>
-<span>    \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"legal_nature_code"</span>,</span>
-<span>    <span class="st">"legal_nature"</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">legal_nature_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Rows: 10</span></span>
-<span><span class="co">#&gt; Columns: 2</span></span>
-<span><span class="co">#&gt; $ legal_nature_code &lt;chr&gt; "0000", "3271", "3280", "3298", "3301", "3999", "…</span></span>
-<span><span class="co">#&gt; $ legal_nature      &lt;chr&gt; "Natureza Jur\xeddica n\xe3o informada", "\xd3rg\…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</section><section id="registration-status-reasons" class="level3"><h3 class="anchored" data-anchor-id="registration-status-reasons">Registration Status Reasons</h3>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">registration_status_reason_data</span> <span class="op">&lt;-</span></span>
-<span>  <span class="va">raw_data_dir</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html">dir_ls</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"file"</span>, regexp <span class="op">=</span> <span class="st">"\\.MOTICSV$"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">map_tibble</span><span class="op">(</span>n_max <span class="op">=</span> <span class="va">n_max</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename_with</a></span><span class="op">(</span></span>
-<span>    \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"registration_status_reason_code"</span>,</span>
-<span>    <span class="st">"registration_status_reason"</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">registration_status_reason_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Rows: 10</span></span>
-<span><span class="co">#&gt; Columns: 2</span></span>
-<span><span class="co">#&gt; $ registration_status_reason_code &lt;chr&gt; "00", "01", "02", "03", "04", "05",…</span></span>
-<span><span class="co">#&gt; $ registration_status_reason      &lt;chr&gt; "SEM MOTIVO", "EXTINCAO POR ENCERRA…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</section><section id="countries" class="level3"><h3 class="anchored" data-anchor-id="countries">Countries</h3>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">countries_data</span> <span class="op">&lt;-</span></span>
-<span>  <span class="va">raw_data_dir</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html">dir_ls</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"file"</span>, regexp <span class="op">=</span> <span class="st">"\\.PAISCSV$"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">map_tibble</span><span class="op">(</span>n_max <span class="op">=</span> <span class="va">n_max</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename_with</a></span><span class="op">(</span></span>
-<span>    \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"country_code"</span>,</span>
-<span>    <span class="st">"country"</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">countries_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Rows: 10</span></span>
-<span><span class="co">#&gt; Columns: 2</span></span>
-<span><span class="co">#&gt; $ country_code &lt;chr&gt; "000", "013", "017", "020", "023", "025", "031", "037"…</span></span>
-<span><span class="co">#&gt; $ country      &lt;chr&gt; "COLIS POSTAUX", "AFEGANISTAO", "ALBANIA", "ALBORAN-PE…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</section><section id="municipalities" class="level3"><h3 class="anchored" data-anchor-id="municipalities">Municipalities</h3>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">municipalities_data</span> <span class="op">&lt;-</span></span>
-<span>  <span class="va">raw_data_dir</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html">dir_ls</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"file"</span>, regexp <span class="op">=</span> <span class="st">"\\.MUNICCSV$"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">map_tibble</span><span class="op">(</span>n_max <span class="op">=</span> <span class="va">n_max</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename_with</a></span><span class="op">(</span></span>
-<span>    \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"municipality_code"</span>,</span>
-<span>    <span class="st">"municipality"</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">municipalities_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Rows: 10</span></span>
-<span><span class="co">#&gt; Columns: 2</span></span>
-<span><span class="co">#&gt; $ municipality_code &lt;chr&gt; "0001", "0002", "0003", "0004", "0005", "0006", "…</span></span>
-<span><span class="co">#&gt; $ municipality      &lt;chr&gt; "GUAJARA-MIRIM", "ALTO ALEGRE DOS PARECIS", "PORT…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</section></section><section id="filter-the-data" class="level2"><h2 class="anchored" data-anchor-id="filter-the-data">Filter the Data</h2>
 </section><section id="tidy-the-data" class="level2"><h2 class="anchored" data-anchor-id="tidy-the-data">Tidy the Data</h2>
-</section><section id="transform-the-data" class="level2"><h2 class="anchored" data-anchor-id="transform-the-data">Transform the Data</h2>
-</section><section id="validate-the-data" class="level2"><h2 class="anchored" data-anchor-id="validate-the-data">Validate the Data</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">establishment_data</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>municipality_code_tom <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html">as.integer</a></span><span class="op">(</span><span class="va">municipality_code_tom</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html">left_join</a></span><span class="op">(</span><span class="va">municipalities_tom_data</span>, by <span class="op">=</span> <span class="st">"municipality_code_tom"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename</a></span><span class="op">(</span></span>
+<span>    municipality_code <span class="op">=</span> <span class="va">municipality_code_ibge</span>,</span>
+<span>    municipality <span class="op">=</span> <span class="va">municipality_ibge</span>,</span>
+<span>    complement <span class="op">=</span> <span class="va">address_complement</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span></span>
+<span>    cnpj_basic <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_pad.html">str_pad</a></span><span class="op">(</span><span class="va">cnpj_basic</span>, <span class="fl">8</span>, pad <span class="op">=</span> <span class="st">"0"</span><span class="op">)</span>,</span>
+<span>    cnpj_order <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_pad.html">str_pad</a></span><span class="op">(</span><span class="va">cnpj_order</span>, <span class="fl">4</span>, pad <span class="op">=</span> <span class="st">"0"</span><span class="op">)</span>,</span>
+<span>    cnpj_dv <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_pad.html">str_pad</a></span><span class="op">(</span><span class="va">cnpj_dv</span>, <span class="fl">2</span>, pad <span class="op">=</span> <span class="st">"0"</span><span class="op">)</span>,</span>
+<span>    cnpj <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span></span>
+<span>      <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html">str_sub</a></span><span class="op">(</span><span class="va">cnpj_basic</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>      <span class="st">"."</span>, <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html">str_sub</a></span><span class="op">(</span><span class="va">cnpj_basic</span>, <span class="fl">3</span>, <span class="fl">5</span><span class="op">)</span>,</span>
+<span>      <span class="st">"."</span>, <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html">str_sub</a></span><span class="op">(</span><span class="va">cnpj_basic</span>, <span class="fl">6</span>, <span class="fl">8</span><span class="op">)</span>,</span>
+<span>      <span class="st">"/"</span>, <span class="va">cnpj_order</span>,</span>
+<span>      <span class="st">"-"</span>, <span class="va">cnpj_dv</span></span>
+<span>    <span class="op">)</span>,</span>
+<span>    cnae <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span></span>
+<span>      <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html">str_sub</a></span><span class="op">(</span><span class="va">cnae</span>, <span class="fl">1</span>, <span class="fl">4</span><span class="op">)</span>,</span>
+<span>      <span class="st">"-"</span>, <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html">str_sub</a></span><span class="op">(</span><span class="va">cnae</span>, <span class="fl">5</span>, <span class="fl">5</span><span class="op">)</span>,</span>
+<span>      <span class="st">"/"</span>, <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_sub.html">str_sub</a></span><span class="op">(</span><span class="va">cnae</span>, <span class="fl">6</span>, <span class="fl">7</span><span class="op">)</span></span>
+<span>    <span class="op">)</span>,</span>
+<span>    street_type <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/case.html">str_to_title</a></span><span class="op">(</span><span class="va">street_type</span><span class="op">)</span>,</span>
+<span>    street_name <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/case.html">str_to_title</a></span><span class="op">(</span><span class="va">street_name</span><span class="op">)</span>,</span>
+<span>    address <span class="op">=</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="va">street_type</span>, <span class="va">street_name</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/iconv.html">iconv</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"ASCII//TRANSLIT"</span><span class="op">)</span>,</span>
+<span>    number <span class="op">=</span></span>
+<span>      <span class="va">number</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/iconv.html">iconv</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"ASCII//TRANSLIT"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_remove.html">str_remove_all</a></span><span class="op">(</span><span class="st">"\\D"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_trim.html">str_trim</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/character.html">as.character</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/warning.html">suppressWarnings</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>    complement <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/case.html">str_to_title</a></span><span class="op">(</span><span class="va">complement</span><span class="op">)</span>,</span>
+<span>    neighborhood <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/case.html">str_to_title</a></span><span class="op">(</span><span class="va">neighborhood</span><span class="op">)</span>,</span>
+<span>    postal_code <span class="op">=</span></span>
+<span>      <span class="va">postal_code</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_pad.html">str_pad</a></span><span class="op">(</span>pad <span class="op">=</span> <span class="fl">0</span>, width <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span></span>
+<span>    <span class="va">cnpj</span>, <span class="va">cnae</span>,</span>
+<span>    <span class="va">federal_unit</span>, <span class="va">municipality_code</span>, <span class="va">municipality</span>,</span>
+<span>    <span class="va">address</span>, <span class="va">number</span>, <span class="va">complement</span>, <span class="va">neighborhood</span>, <span class="va">postal_code</span>,</span>
+<span>    <span class="va">g0</span>, <span class="va">g1_g2</span>, <span class="va">g3</span>, <span class="va">g4</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html">across</a></span><span class="op">(</span></span>
+<span>      .cols <span class="op">=</span> <span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>,</span>
+<span>      .fns <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
+<span>          <span class="fu"><a href="https://rdrr.io/r/base/Encoding.html">Encoding</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"UTF-8"</span></span>
+<span></span>
+<span>          <span class="fu"><a href="https://rdrr.io/r/base/iconv.html">iconv</a></span><span class="op">(</span><span class="va">x</span>, from <span class="op">=</span> <span class="st">""</span>, to <span class="op">=</span> <span class="st">"UTF-8"</span>, sub <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span>
+<span>      <span class="op">}</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Rows: 147,096</span></span>
+<span><span class="co">#&gt; Columns: 14</span></span>
+<span><span class="co">#&gt; $ cnpj              &lt;chr&gt; "37.855.854/0001-60", "37.857.237/0001-01", "37.8…</span></span>
+<span><span class="co">#&gt; $ cnae              &lt;chr&gt; "5620-1/04", "5620-1/04", "5620-1/04", "5620-1/04…</span></span>
+<span><span class="co">#&gt; $ federal_unit      &lt;chr&gt; "SP", "SP", "SP", "SP", "SP", "SP", "SP", "SP", "…</span></span>
+<span><span class="co">#&gt; $ municipality_code &lt;int&gt; 3550308, 3550308, 3550308, 3550308, 3550308, 3550…</span></span>
+<span><span class="co">#&gt; $ municipality      &lt;chr&gt; "São Paulo", "São Paulo", "São Paulo", "São Paulo…</span></span>
+<span><span class="co">#&gt; $ address           &lt;chr&gt; "Rua Do Trabalho", "Rua Giovanni Di Paolo", "Rua …</span></span>
+<span><span class="co">#&gt; $ number            &lt;chr&gt; "404", "155", "115", "155", "61", "86", "208", "4…</span></span>
+<span><span class="co">#&gt; $ complement        &lt;chr&gt; "Conj 11", NA, NA, "Conj 142", NA, NA, NA, "Fundo…</span></span>
+<span><span class="co">#&gt; $ neighborhood      &lt;chr&gt; "Vila Nova Savoia", "Agua Funda", "Jardim Itacolo…</span></span>
+<span><span class="co">#&gt; $ postal_code       &lt;chr&gt; "03531010", "04156100", "04386020", "03084030", "…</span></span>
+<span><span class="co">#&gt; $ g0                &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, F…</span></span>
+<span><span class="co">#&gt; $ g1_g2             &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, F…</span></span>
+<span><span class="co">#&gt; $ g3                &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, …</span></span>
+<span><span class="co">#&gt; $ g4                &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, …</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 </section><section id="arrange-the-data" class="level2"><h2 class="anchored" data-anchor-id="arrange-the-data">Arrange the Data</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">establishment_data</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html">arrange</a></span><span class="op">(</span><span class="va">federal_unit</span>, <span class="va">municipality</span>, <span class="va">cnae</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Rows: 147,096</span></span>
+<span><span class="co">#&gt; Columns: 14</span></span>
+<span><span class="co">#&gt; $ cnpj              &lt;chr&gt; "06.057.223/0430-67", "75.315.333/0338-99", "76.4…</span></span>
+<span><span class="co">#&gt; $ cnae              &lt;chr&gt; "4711-3/01", "4711-3/01", "4711-3/01", "4711-3/01…</span></span>
+<span><span class="co">#&gt; $ federal_unit      &lt;chr&gt; "SP", "SP", "SP", "SP", "SP", "SP", "SP", "SP", "…</span></span>
+<span><span class="co">#&gt; $ municipality_code &lt;int&gt; 3550308, 3550308, 3550308, 3550308, 3550308, 3550…</span></span>
+<span><span class="co">#&gt; $ municipality      &lt;chr&gt; "São Paulo", "São Paulo", "São Paulo", "São Paulo…</span></span>
+<span><span class="co">#&gt; $ address           &lt;chr&gt; "Rua Nsra Das Merces", "Avenida Jose Cesar De Oli…</span></span>
+<span><span class="co">#&gt; $ number            &lt;chr&gt; "29", "500", "519", "500", "1535", "2979", "899",…</span></span>
+<span><span class="co">#&gt; $ complement        &lt;chr&gt; NA, "Anexo A", NA, "Box   20", NA, NA, NA, NA, NA…</span></span>
+<span><span class="co">#&gt; $ neighborhood      &lt;chr&gt; "Vila Das Merces", "Vila Leopoldina", "Jardim Per…</span></span>
+<span><span class="co">#&gt; $ postal_code       &lt;chr&gt; "04165000", "05317000", "05536900", "02049900", "…</span></span>
+<span><span class="co">#&gt; $ g0                &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, …</span></span>
+<span><span class="co">#&gt; $ g1_g2             &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, T…</span></span>
+<span><span class="co">#&gt; $ g3                &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, …</span></span>
+<span><span class="co">#&gt; $ g4                &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, T…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 </section><section id="geocode-the-data" class="level2"><h2 class="anchored" data-anchor-id="geocode-the-data">Geocode the Data</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">fields</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ipeagit.github.io/geocodebr/reference/definir_campos.html">definir_campos</a></span><span class="op">(</span></span>
+<span>  estado <span class="op">=</span> <span class="st">"federal_unit"</span>,</span>
+<span>  municipio <span class="op">=</span> <span class="st">"municipality_code"</span>,</span>
+<span>  logradouro <span class="op">=</span> <span class="st">"address"</span>,</span>
+<span>  numero <span class="op">=</span> <span class="st">"number"</span>,</span>
+<span>  cep <span class="op">=</span> <span class="st">"postal_code"</span>,</span>
+<span>  localidade <span class="op">=</span> <span class="st">"neighborhood"</span></span>
+<span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb38"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">establishment_data</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ipeagit.github.io/geocodebr/reference/geocode.html">geocode</a></span><span class="op">(</span></span>
+<span>    campos_endereco <span class="op">=</span> <span class="va">fields</span>,</span>
+<span>    resultado_sf <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    verboso <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>    cache <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>    n_cores <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    resolver_empates <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="co">#&gt; ℹ Padronizando endereços de entrada</span></span>
+<span><span class="co">#&gt; ℹ Utilizando dados do CNEFE armazenados localmente</span></span>
+<span><span class="co">#&gt; ℹ Geolocalizando endereços</span></span>
+<span><span class="co">#&gt; Endereços processados: 0/147,096 ■                                  0% - Pro…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 36,079/147,096 ■■■■■■■■                          25% …</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 66,072/147,096 ■■■■■■■■■■■■■■                    45% …</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 67,900/147,096 ■■■■■■■■■■■■■■■                   46% …</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 69,904/147,096 ■■■■■■■■■■■■■■■                   48% …</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 115,800/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■         79%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 131,829/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 133,277/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      91%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 134,009/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      91%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 135,240/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     92%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 136,456/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     93%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 136,629/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     93%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 136,970/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     93%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 138,250/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     94%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 139,066/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     95%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 139,768/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    95%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 139,797/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    95%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 140,416/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    95%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 140,442/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    95%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 140,483/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 140,489/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 140,532/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 142,703/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    97%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 146,139/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■   99%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 146,822/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■  100%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Endereços processados: 147,096/147,096 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■  100%…</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ℹ Preparando resultados</span></span>
+<span><span class="co">#&gt; Foram encontrados e resolvidos 4646 casos de empate.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">establishment_data</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html">as_tibble</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename</a></span><span class="op">(</span></span>
+<span>    latitude <span class="op">=</span> <span class="va">lat</span>,</span>
+<span>    longitude <span class="op">=</span> <span class="va">lon</span>,</span>
+<span>    geocodebr_precision <span class="op">=</span> <span class="va">precisao</span>,</span>
+<span>    geocodebr_type_of_result <span class="op">=</span> <span class="va">tipo_resultado</span>,</span>
+<span>    geocodebr_deviation_meters <span class="op">=</span> <span class="va">desvio_metros</span>,</span>
+<span>    geocodebr_address_found <span class="op">=</span> <span class="va">endereco_encontrado</span>,</span>
+<span>    geocodebr_ambiguous <span class="op">=</span> <span class="va">empate</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/relocate.html">relocate</a></span><span class="op">(</span><span class="va">g0</span>, <span class="va">g1_g2</span>, <span class="va">g3</span>, <span class="va">g4</span>, .after <span class="op">=</span> <span class="va">geocodebr_ambiguous</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://danielvartan.github.io/rutils/reference/drop_na.html">drop_na</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/all_of.html">all_of</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"latitude"</span>, <span class="st">"longitude"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">establishment_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Rows: 147,096</span></span>
+<span><span class="co">#&gt; Columns: 21</span></span>
+<span><span class="co">#&gt; $ cnpj                       &lt;chr&gt; "06.057.223/0430-67", "75.315.333/0338-9…</span></span>
+<span><span class="co">#&gt; $ cnae                       &lt;chr&gt; "4711-3/01", "4711-3/01", "4711-3/01", "…</span></span>
+<span><span class="co">#&gt; $ federal_unit               &lt;chr&gt; "SP", "SP", "SP", "SP", "SP", "SP", "SP"…</span></span>
+<span><span class="co">#&gt; $ municipality_code          &lt;int&gt; 3550308, 3550308, 3550308, 3550308, 3550…</span></span>
+<span><span class="co">#&gt; $ municipality               &lt;chr&gt; "São Paulo", "São Paulo", "São Paulo", "…</span></span>
+<span><span class="co">#&gt; $ address                    &lt;chr&gt; "Rua Nsra Das Merces", "Avenida Jose Ces…</span></span>
+<span><span class="co">#&gt; $ number                     &lt;chr&gt; "29", "500", "519", "500", "1535", "2979…</span></span>
+<span><span class="co">#&gt; $ complement                 &lt;chr&gt; NA, "Anexo A", NA, "Box   20", NA, NA, N…</span></span>
+<span><span class="co">#&gt; $ neighborhood               &lt;chr&gt; "Vila Das Merces", "Vila Leopoldina", "J…</span></span>
+<span><span class="co">#&gt; $ postal_code                &lt;chr&gt; "04165000", "05317000", "05536900", "020…</span></span>
+<span><span class="co">#&gt; $ latitude                   &lt;dbl&gt; -23.62285201, -23.54093647, -23.58904585…</span></span>
+<span><span class="co">#&gt; $ longitude                  &lt;dbl&gt; -46.60754656, -46.73186811, -46.73859387…</span></span>
+<span><span class="co">#&gt; $ geocodebr_precision        &lt;chr&gt; "cep", "numero", "numero_aproximado", "n…</span></span>
+<span><span class="co">#&gt; $ geocodebr_type_of_result   &lt;chr&gt; "dc01", "dn01", "da04", "dn03", "da01", …</span></span>
+<span><span class="co">#&gt; $ geocodebr_deviation_meters &lt;int&gt; 141, 342, 8, 6, 6, 6, 6, 6, 6, 1878, 6, …</span></span>
+<span><span class="co">#&gt; $ geocodebr_address_found    &lt;chr&gt; "VILA DAS MERCES, SAO PAULO - SP, 04165-…</span></span>
+<span><span class="co">#&gt; $ geocodebr_ambiguous        &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE…</span></span>
+<span><span class="co">#&gt; $ g0                         &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE…</span></span>
+<span><span class="co">#&gt; $ g1_g2                      &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE…</span></span>
+<span><span class="co">#&gt; $ g3                         &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE…</span></span>
+<span><span class="co">#&gt; $ g4                         &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 </section><section id="data-dictionary" class="level2"><h2 class="anchored" data-anchor-id="data-dictionary">Data Dictionary</h2>
 </section><section id="save-the-valid-data" class="level2"><h2 class="anchored" data-anchor-id="save-the-valid-data">Save the Valid Data</h2>
 </section><section id="visualize-the-data" class="level2"><h2 class="anchored" data-anchor-id="visualize-the-data">Visualize the Data</h2>
-</section><section id="citation" class="level2"><h2 class="anchored" data-anchor-id="citation">Citation</h2>
+<section id="set-variables" class="level3"><h3 class="anchored" data-anchor-id="set-variables">Set Variables</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">plot_municipality</span> <span class="op">&lt;-</span> <span class="fl">3550308</span> <span class="co"># São Paulo</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section><section id="set-shape" class="level3"><h3 class="anchored" data-anchor-id="set-shape">Set Shape</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">shape</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">plot_municipality</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ipeagit.github.io/geobr/reference/read_municipality.html">read_municipality</a></span><span class="op">(</span>year <span class="op">=</span> <span class="fu"><a href="https://danielvartan.github.io/orbis/reference/closest_geobr_year.html">closest_geobr_year</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html">st_transform</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_crs.html">st_crs</a></span><span class="op">(</span><span class="fl">4326</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; ! The closest map year to 2025 is 2020. Using year 2020 instead.</span></span>
+<span><span class="co">#&gt; Using year/date 2020</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section><section id="prepare-data" class="level3"><h3 class="anchored" data-anchor-id="prepare-data">Prepare Data</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb43"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">plot_data</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">establishment_data</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">municipality_code</span> <span class="op">==</span> <span class="va">plot_municipality</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_longer.html">pivot_longer</a></span><span class="op">(</span></span>
+<span>    cols <span class="op">=</span> <span class="fu"><a href="https://tidyselect.r-lib.org/reference/all_of.html">all_of</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"g0"</span>, <span class="st">"g1_g2"</span>, <span class="st">"g3"</span>, <span class="st">"g4"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    names_to <span class="op">=</span> <span class="st">"group"</span>,</span>
+<span>    values_to <span class="op">=</span> <span class="st">"value"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">value</span> <span class="op">==</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_as_sf.html">st_as_sf</a></span><span class="op">(</span></span>
+<span>    coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"longitude"</span>, <span class="st">"latitude"</span><span class="op">)</span>,</span>
+<span>    crs <span class="op">=</span> <span class="fl">4326</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_join.html">st_join</a></span><span class="op">(</span><span class="va">shape</span>, join <span class="op">=</span> <span class="va">st_within</span>, left <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span></span>
+<span>    latitude <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html">st_coordinates</a></span><span class="op">(</span><span class="va">.</span><span class="op">)</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span>,</span>
+<span>    longitude <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html">st_coordinates</a></span><span class="op">(</span><span class="va">.</span><span class="op">)</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/transmute.html">transmute</a></span><span class="op">(</span></span>
+<span>    group <span class="op">=</span></span>
+<span>      <span class="va">group</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://stringr.tidyverse.org/reference/case.html">str_to_upper</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_replace.html">str_replace</a></span><span class="op">(</span><span class="st">"_"</span>, <span class="st">"-"</span><span class="op">)</span>,</span>
+<span>    <span class="va">latitude</span>,</span>
+<span>    <span class="va">longitude</span></span>
+<span>  <span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb44"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">plot_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Rows: 204,645</span></span>
+<span><span class="co">#&gt; Columns: 3</span></span>
+<span><span class="co">#&gt; $ group     &lt;chr&gt; "G1-G2", "G4", "G1-G2", "G4", "G1-G2", "G4", "G1-G2", "G4…</span></span>
+<span><span class="co">#&gt; $ latitude  &lt;dbl&gt; -23.62285201, -23.62285201, -23.54093647, -23.54093647, -…</span></span>
+<span><span class="co">#&gt; $ longitude &lt;dbl&gt; -46.60754656, -46.60754656, -46.73186811, -46.73186811, -…</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section><section id="plot-data" class="level3"><h3 class="anchored" data-anchor-id="plot-data">Plot Data</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb45"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html">geom_sf</a></span><span class="op">(</span></span>
+<span>    data <span class="op">=</span> <span class="va">shape</span>,</span>
+<span>    fill <span class="op">=</span> <span class="st">"gray90"</span>,</span>
+<span>    color <span class="op">=</span> <span class="st">"black"</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html">geom_point</a></span><span class="op">(</span></span>
+<span>    data <span class="op">=</span> <span class="va">plot_data</span>,</span>
+<span>    mapping <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">longitude</span>, y <span class="op">=</span> <span class="va">latitude</span>, color <span class="op">=</span> <span class="va">group</span><span class="op">)</span>,</span>
+<span>    size <span class="op">=</span> <span class="fl">0.01</span></span>
+<span>    <span class="co"># color = get_brand_color("blue")</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">group</span>, ncol <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="fl">4326</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html">scale_x_continuous</a></span><span class="op">(</span>labels <span class="op">=</span> <span class="cn">NULL</span>, breaks <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html">scale_y_continuous</a></span><span class="op">(</span>labels <span class="op">=</span> <span class="cn">NULL</span>, breaks <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://danielvartan.github.io/brandr/reference/scale_brand.html">scale_colour_brand_d</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="cn">NULL</span>, color <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure"><p><a href="index_files/figure-html/unnamed-chunk-36-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="index_files/figure-html/unnamed-chunk-36-1.png" class="img-fluid figure-img" width="672"></a></p>
+</figure>
+</div>
+</div>
+</div>
+</section></section><section id="citation" class="level2"><h2 class="anchored" data-anchor-id="citation">Citation</h2>
 <div class="callout callout-style-simple callout-important">
 <div class="callout-body d-flex">
 <div class="callout-icon-container">
@@ -720,17 +972,17 @@ Figure&nbsp;1: Data science workflow created by Wickham, Çetinkaya-Runde, and G
 </div>
 </div>
 <p>To cite this work, please use the following format:</p>
-<p>Vartanian, D., Penz, C. L. S., Fernandes, C. N., &amp; Giannotti, M. A. (2025). <em>A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)</em> [Computer software]. Center for Metropolitan Studies of the University of São Paulo. <a href="https://cem-usp.github.io/rfb-cnpj-geocoding" class="uri">https://cem-usp.github.io/rfb-cnpj-geocoding</a></p>
+<p>Vartanian, D., Penz, C. L. S., Caldeira, G., Fernandes, C. N., &amp; Giannotti, M. A. (2025). <em>A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)</em> [Computer software]. Center for Metropolitan Studies of the University of São Paulo. <a href="https://cem-usp.github.io/rfb-cnpj-geocoding" class="uri">https://cem-usp.github.io/rfb-cnpj-geocoding</a></p>
 <p>A BibTeX entry for LaTeX users is</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode latex code-with-copy"><code class="sourceCode latex"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>@software{vartanian2025,</span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  title = {A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)},</span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>  author = {{Daniel Vartanian} and {Clara de Lima e Silva Penz} and {Camila Nastari Fernandes} and {Mariana Abrantes Giannotti}},</span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  year = {2025},</span>
-<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>  address = {São Paulo},</span>
-<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>  institution = {Center for Metropolitan Studies of the University of São Paulo},</span>
-<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>  langid = {en},</span>
-<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>  url = {https://cem-usp.github.io/rfb-cnpj-geocoding}</span>
-<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb46"><pre class="sourceCode latex code-with-copy"><code class="sourceCode latex"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>@software{vartanian2025,</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  title = {A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)},</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  author = {{Daniel Vartanian} and {Clara de Lima e Silva Penz} and {Gabriel Caldeira} and {Camila Nastari Fernandes} and {Mariana Abrantes Giannotti}},</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  year = {2025},</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>  address = {São Paulo},</span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>  institution = {Center for Metropolitan Studies of the University of São Paulo},</span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>  langid = {en},</span>
+<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>  url = {https://cem-usp.github.io/rfb-cnpj-geocoding}</span>
+<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section><section id="license" class="level2"><h2 class="anchored" data-anchor-id="license">License</h2>
 <div style="text-align: left;">
 <p><a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPLv3-bd0000.svg" class="img-fluid" alt="License: GPLv3"></a> <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/"><img src="https://img.shields.io/badge/license-CC_BY--NC--SA_4.0-lightgrey.svg" class="img-fluid" alt="License: CC BY-NC-SA 4.0"></a></p>
@@ -741,12 +993,12 @@ Figure&nbsp;1: Data science workflow created by Wickham, Çetinkaya-Runde, and G
 <i class="callout-icon"></i>
 </div>
 <div class="callout-body-container">
-<p>The original data sources may have their own license terms and conditions.</p>
+<p>The original data sources may be subject to their own licensing terms and conditions.</p>
 </div>
 </div>
 </div>
-<p>The code in this report is licensed under the <a href="https://www.gnu.org/licenses/gpl-3.0">GNU General Public License Version 3</a>, while the report is available under the <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International</a>.</p>
-<pre class="text"><code>Copyright (C) 2025 Daniel Vartanian
+<p>The code in this repository is licensed under the <a href="https://www.gnu.org/licenses/gpl-3.0">GNU General Public License Version 3</a>, while the report is available under the <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International</a>.</p>
+<pre class="text"><code>Copyright (C) 2025 Center for Metropolitan Studies
 
 The code in this report is free software: you can redistribute it and/or
 modify it under the terms of the GNU General Public License as published by the

@@ -23,14 +23,53 @@ The processed data are available in both [`rds`](https://rdrr.io/r/base/readRDS.
 
 ## Usage
 
-The pipeline was developed using the [Quarto](https://quarto.org/) publishing system and the [R programming language](https://www.r-project.org/). To ensure consistent results, the [`renv`](https://rstudio.github.io/renv/) package is used to manage and restore the R environment.
+The pipeline was developed using the [Quarto](https://quarto.org/) publishing system, the [R](https://www.r-project.org/) and [AWK](https://en.wikipedia.org/wiki/AWK) programming languages. To ensure consistent results, the [`renv`](https://rstudio.github.io/renv/) package is used to manage and restore the R environment.
 
-After installing the three dependencies mentioned above, follow these steps to reproduce the analyses:
+Access to the raw data is restricted. Running the analyses requires an active internet connection and a set of access keys (see the [*Keys*](#keys) section). Do not use VPNs, corporate proxies, or other network-routing tools while processing the data, as these can interfere with authentication and downloads.
+
+Make sure the AWK executable directory is added to your [PATH](https://en.wikipedia.org/wiki/PATH_(variable)) environment variable.
+
+After installing the four dependencies mentioned above and setting all the keys, follow these steps to reproduce the analyses:
 
 1. **Clone** this repository to your local machine.
 2. **Open** the project in your preferred IDE.
 3. **Restore the R environment** by running [`renv::restore()`](https://rstudio.github.io/renv/reference/restore.html) in the R console. This will install all required software dependencies.
 4. **Open** `index.qmd` and run the code as described in the report.
+
+## Keys
+
+To access the data and run the [Quarto](https://quarto.org/) notebook, you must first obtain authorization to access the project's [OSF](https://osf.io) repositories and [Google Sheets](https://workspace.google.com/products/sheets/) files.
+
+Once you have the necessary permissions, run the following command to authorize your access to the Google Sheets API:
+
+```r
+library(gargle)
+library(googlesheets4)
+
+options(gargle_oauth_cache = ".secrets")
+
+gs4_auth()
+gargle_oauth_cache()
+```
+
+Next, create a file named [`.Renviron`](https://bookdown.org/csgillespie/efficientR/set-up.html#:~:text=2.4.6%20The%20.Renviron%20file) in the root directory of the project and add the following environment variables:
+
+- `OSF_PAT`: Your [OSF](https://osf.io/) Personal Access Token ([PAT](https://en.wikipedia.org/wiki/Personal_access_token)). If you don't have one, go to the settings section of your OSF account and create a new token.
+- `ACESSOSAN_PASSWORD`: The password for the project's [RSA](https://en.wikipedia.org/wiki/RSA_cryptosystem) private key (32 bytes).
+
+Example (do not use these values):
+
+```ini
+OSF_PAT=bWHtQBmdeMvZXDv2R4twdNLjmakjLUZr4t72ouAbNjwycGtDzfm3gjz4ChYXwbBaBVJxJR
+ACESSOSAN_PASSWORD=MmXN_od_pe*RdHgfKTaKiXdV7KD2qPzW
+```
+
+Additionally, you will need the following keys in the project's [`_ssh`](_ssh) folder:
+
+- `id_rsa`: The project's private RSA key ([RSA](https://en.wikipedia.org/wiki/RSA_cryptosystem) 4096 bits (OpenSSL)).
+- `id_rsa.pub`: The project's public RSA key.
+
+These project's keys are provided to authorized personnel only. If you need access, please contact the authors.
 
 ## Citation
 
@@ -39,14 +78,14 @@ After installing the three dependencies mentioned above, follow these steps to r
 
 To cite this work, please use the following format:
 
-Vartanian, D., Penz, C. L. S., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/rfb-cnpj-geocoding>
+Vartanian, D., Penz, C. L. S., Caldeira, G., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/rfb-cnpj-geocoding>
 
 A BibTeX entry for LaTeX users is
 
 ```latex
 @software{vartanian2025,
   title = {A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)},
-  author = {{Daniel Vartanian} and {Clara de Lima e Silva Penz} and {Camila Nastari Fernandes} and {Mariana Abrantes Giannotti}},
+  author = {{Daniel Vartanian} and {Clara de Lima e Silva Penz} and {Gabriel Caldeira} and {Camila Nastari Fernandes} and {Mariana Abrantes Giannotti}},
   year = {2025},
   address = {São Paulo},
   institution = {Center for Metropolitan Studies of the University of São Paulo},
@@ -60,10 +99,13 @@ A BibTeX entry for LaTeX users is
 [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-bd0000.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
+> [!IMPORTANT]
+> The original data sources may be subject to their own licensing terms and conditions.
+
 The code in this repository is licensed under the [GNU General Public License Version 3](https://www.gnu.org/licenses/gpl-3.0), while the report is available under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
 ``` text
-Copyright (C) 2025 Daniel Vartanian
+Copyright (C) 2025 Center for Metropolitan Studies
 
 The code in this report is free software: you can redistribute it and/or
 modify it under the terms of the GNU General Public License as published by the
