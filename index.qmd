@@ -250,7 +250,7 @@ See the [Source of Data](#source-of-data) section for more information.
 :::
 
 ```{r}
-#| labels: Download IBGE Municipalities Data
+#| labels: Download and Import IBGE Municipalities Data
 
 municipalities_data <- brazil_municipality(year = year)
 ```
@@ -268,6 +268,8 @@ See the [Source of Data](#source-of-data) section for more information.
 ### Download Files
 
 ```{r}
+#| label: Download RFB Data
+
 root <- file.path( # Don´t change the function!
     "https://arquivos.receitafederal.gov.br",
     "dados",
@@ -329,6 +331,8 @@ RFB data identifies municipalities using a different coding scheme (_Tabela de �
 :::
 
 ```{r}
+#| label: Import TOM Municipality Codes and Convert IBGE Codes
+
 municipalities_tom_data <-
   raw_data_dir |>
   path("municipios.csv") |>
@@ -379,7 +383,7 @@ municipalities <-
 municipalities
 ```
 
-## Import the Data
+## Import Data
 
 ::: {.callout-note}
 The [AWK](https://www.gnu.org/software/gawk/) programming language and the [vroom](https://vroom.r-lib.org/) R package are used to read and filter the data efficiently, without loading it entirely into memory.
@@ -388,7 +392,7 @@ Only establishments with an *Active* registration status (`$6 == "02"`) and no s
 :::
 
 ```{r}
-#| label: Read the Data
+#| label: Import Data
 
 establishment_data <-
   raw_data_dir |>
@@ -475,6 +479,8 @@ These dates indicate when establishments were registered as *Active*.
 :::
 
 ```{r}
+#| label: Visualize Registration Status Dates
+
 establishment_data |>
   mutate(
     registration_status_date = ymd(registration_status_date)
@@ -491,7 +497,7 @@ establishment_data |>
   )
 ```
 
-## Filter the Data
+## Filter Data
 
 ::: {.callout-note}
 The Locais-Nova lookup table is used to filter establishment data and classify establishments into the scale groups.
@@ -500,19 +506,19 @@ For more details on the Locais-Nova lookup table, see the [Source of Data](#sour
 :::
 
 ```{r}
-#| label: Filter the Data
+#| label: Filter Data
 
 establishment_data <-
   establishment_data |>
   mutate(cnae = str_pad(cnae_primary, 7, pad = "0")) |>
   left_join(lookup_data, by = join_by(cnae, federal_unit)) |>
   rename(
-    locaisnova_g0 = g0,
-    locaisnova_g1_g2 = g1_g2,
-    locaisnova_g3 = g3,
-    locaisnova_g4 = g4
+    locais_nova_g0 = g0,
+    locais_nova_g1_g2 = g1_g2,
+    locais_nova_g3 = g3,
+    locais_nova_g4 = g4
   ) |>
-  drop_na(locaisnova_g0, locaisnova_g1_g2, locaisnova_g3, locaisnova_g4)
+  drop_na(starts_with("locais_nova"))
 ```
 
 ```{r}
@@ -546,27 +552,36 @@ establishment_data <-
     cnpj_basic = str_pad(cnpj_basic, 8, pad = "0"),
     cnpj_order = str_pad(cnpj_order, 4, pad = "0"),
     cnpj_dv = str_pad(cnpj_dv, 2, pad = "0"),
-    cnpj = paste0(
-      str_sub(cnpj_basic, 1, 2),
-      ".", str_sub(cnpj_basic, 3, 5),
-      ".", str_sub(cnpj_basic, 6, 8),
-      "/", cnpj_order,
-      "-", cnpj_dv
+    cnpj = if_else(
+      !is.na(cnpj_basic) & !is.na(cnpj_order) & !is.na(cnpj_dv),
+      paste0(
+        str_sub(cnpj_basic, 1, 2),
+        ".", str_sub(cnpj_basic, 3, 5),
+        ".", str_sub(cnpj_basic, 6, 8),
+        "/", cnpj_order,
+        "-", cnpj_dv
+      ),
+      NA_character_
     ),
-    cnae = paste0(
-      str_sub(cnae, 1, 4),
-      "-", str_sub(cnae, 5, 5),
-      "/", str_sub(cnae, 6, 7)
+    cnae = if_else(
+      !is.na(cnae),
+      paste0(
+        str_sub(cnae, 1, 4),
+        "-", str_sub(cnae, 5, 5),
+        "/", str_sub(cnae, 6, 7)
+      ),
+      NA_character_
     ),
     municipality_code = as.integer(municipality_code),
     street_type = str_to_title(street_type),
     street_name = str_to_title(street_name),
-    address =
-      paste(street_type, street_name) |>
-      iconv(to = "ASCII//TRANSLIT"),
+    address = if_else(
+      !is.na(street_type) & !is.na(street_name),
+      paste(street_type, street_name),
+      NA_character_
+    ),
     number =
       number |>
-      iconv(to = "ASCII//TRANSLIT") |>
       str_remove_all("\\D") |>
       str_trim() |>
       as.numeric() |>
@@ -578,10 +593,24 @@ establishment_data <-
       postal_code |>
       str_remove_all("\\D") |>
       str_pad(pad = 0, width = 8),
-    postal_code = paste0(
-      str_sub(postal_code, 1, 5),
-      "-",
-      str_sub(postal_code, 6, 8)
+    postal_code = if_else(
+      !is.na(postal_code),
+      paste0(
+        str_sub(postal_code, 1, 5),
+        "-",
+        str_sub(postal_code, 6, 8)
+      ),
+      NA_character_
+    )
+  ) |>
+  mutate(
+    across(
+      .cols = where(is.character),
+      .fns = function(x) {
+        Encoding(x) <- "UTF-8"
+
+        iconv(x, from = "", to = "UTF-8", sub = "")
+      }
     )
   ) |>
   select(
@@ -589,17 +618,7 @@ establishment_data <-
     region_code, region, state_code, state, federal_unit,
     municipality_code, municipality,
     address, number, complement, neighborhood, postal_code,
-    locaisnova_g0, locaisnova_g1_g2, locaisnova_g3, locaisnova_g4
-  ) |>
-  mutate(
-    across(
-      .cols = where(is.character),
-      .fns = function(x) {
-          Encoding(x) <- "UTF-8"
-
-          iconv(x, from = "", to = "UTF-8", sub = "")
-      }
-    )
+    locais_nova_g0, locais_nova_g1_g2, locais_nova_g3, locais_nova_g4
   )
 ```
 
@@ -670,15 +689,26 @@ establishment_data <-
     geocodebr_address_found = endereco_encontrado,
     geocodebr_ambiguous = empate
   ) |>
-  relocate(
-    locaisnova_g0, locaisnova_g1_g2, locaisnova_g3, locaisnova_g4,
-    .after = geocodebr_ambiguous
-  ) |>
+  relocate(starts_with("locais_nova"), .after = geocodebr_ambiguous) |>
   drop_na(all_of(c("latitude", "longitude")))
 ```
 
 ```{r}
 establishment_data |> glimpse()
+```
+
+## Visualize Geocoding Precision
+
+```{r}
+#| label: Visualize Geocoding Precision
+
+establishment_data |>
+  ggplot(aes(geocodebr_precision)) +
+  geom_bar(fill = get_brand_color("blue")) +
+  labs(
+    x = "{geocodebr} Precision",
+    y = "Frequency"
+  )
 ```
 
 ## Data Dictionary
@@ -711,10 +741,10 @@ metadata <-
       geocodebr_deviation_meters = "{geocodebr} deviation (meters)",
       geocodebr_address_found = "{geocodebr} address returned",
       geocodebr_ambiguous = "{geocodebr} ambiguous result",
-      locaisnova_g0 = "Locais-Nova Group 0 indicator",
-      locaisnova_g1_g2 = "Locais-Nova Groups 1 and 2 indicator",
-      locaisnova_g3 = "Locais-Nova Group 3 indicator",
-      locaisnova_g4 = "Locais-Nova Group 4 indicator"
+      locais_nova_g0 = "Locais-Nova Group 0 indicator",
+      locais_nova_g1_g2 = "Locais-Nova Groups 1 and 2 indicator",
+      locais_nova_g3 = "Locais-Nova Group 3 indicator",
+      locais_nova_g4 = "Locais-Nova Group 4 indicator"
     )
   ) |>
   generate_dictionary(details = "full") |>
@@ -886,7 +916,7 @@ establishment_data <-
   read_rds()
 ```
 
-## Visualize the Data
+## Visualize Geocoding
 
 ### Convert all TOM codes to their equivalent IBGE codes
 
@@ -901,7 +931,7 @@ municipalities <-
 ### Plot the Data
 
 ```{r}
-#| label: Visualize the Data
+#| label: Visualize Geocoding
 #| fig-width: 10
 #| fig-height: 6
 
@@ -924,7 +954,10 @@ for (i in municipalities) {
     filter(municipality_code == i) |>
     pivot_longer(
       cols = all_of(
-        c("locaisnova_g0", "locaisnova_g1_g2", "locaisnova_g3", "locaisnova_g4")
+        c(
+          "locais_nova_g0", "locais_nova_g1_g2", "locais_nova_g3",
+          "locais_nova_g4"
+        )
       ),
       names_to = "group",
       values_to = "value"
@@ -943,7 +976,7 @@ for (i in municipalities) {
     transmute(
       group =
         group |>
-        str_remove("locaisnova_") |>
+        str_remove("locais_nova_") |>
         str_to_upper() |>
         str_replace("_", "-"),
       latitude,
@@ -1004,7 +1037,7 @@ To cite this work, please use the following format:
 
 Vartanian, D., Penz, C. L. S., Caldeira, G., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing, geocoding, and classifying CNPJs from the Brazilian Federal Revenue Service (RFB) using the Locais-Nova scale* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/locais-nova-rfb-geocoding>
 
-A BibLaTeX entry for LaTeX users is
+A BibLaTeX entry for LaTeX users is:
 
 ```latex
 @software{vartanian2025,

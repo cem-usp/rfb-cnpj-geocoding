@@ -105,7 +105,7 @@ To cite this work, please use the following format:
 
 Vartanian, D., Penz, C. L. S., Caldeira, G., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing, geocoding, and classifying CNPJs from the Brazilian Federal Revenue Service (RFB) using the Locais-Nova scale* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/locais-nova-rfb-geocoding>
 
-A BibLaTeX entry for LaTeX users is
+A BibLaTeX entry for LaTeX users is:
 
 ```latex
 @software{vartanian2025,
