@@ -400,7 +400,7 @@ municipalities
 ::: {.callout-note}
 The [AWK](https://www.gnu.org/software/gawk/) programming language and the [vroom](https://vroom.r-lib.org/) R package are used to read and filter the data efficiently, without loading it entirely into memory.
 
-Only establishments with an *Active* registration status (`$6 == "02"`) and no special status (`$29 == ""`) are included. The data is further filtered by municipality (`$21 == municipalities`).
+Only establishments with an *Active* registration status (`$6 == "02"`) and no special status (`$29 == ""`) are included. The data is then filtered by municipality (`$21 == municipalities`), and duplicate CNPJs are removed.
 :::
 
 ```{r}
