@@ -16,13 +16,15 @@ source(here("R", "_setup.R"))
 
 ## Overview
 
-This report provides reproducible pipeline for processing, [geocoding](https://en.wikipedia.org/wiki/Address_geocoding), and classifying [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s from the Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)) using the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) scale.
+This report provides a reproducible pipeline for processing, [geocoding](https://en.wikipedia.org/wiki/Address_geocoding), and classifying [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s from the Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)) using the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) scale.
+
+For instructions on how to run the pipeline, see the repository [README](https://github.com/cem-usp/locais-nova-rfb-geocoding/blob/main/README.md).
 
 ## Problem
 
-The [AcessoSAN](https://doi.org/10.17605/OSF.IO/ZE6WT) project aims to develop methods for measuring and analyzing inequities in access to healthy food in favelas and other urban communities. Achieving this requires a reliable and up-to-date database of food retail establishments.
+The [AcessoSAN](https://doi.org/10.17605/OSF.IO/ZE6WT) project aims to develop methods for measuring and analyzing inequities in access to healthy food in favelas and other urban communities. Achieving this requires a reliable and up-to-date database of food establishments.
 
-The Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)) [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s database lists companies operating in Brazil, including food retail establishments. However, it does not provide [geocoded information](https://en.wikipedia.org/wiki/Address_geocoding), which is required for spatial analyses. This pipeline addresses that gap by processing and [geocoding](https://en.wikipedia.org/wiki/Address_geocoding) the data, and classifying establishments according to the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) scale.
+The Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)) [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s database lists companies operating in Brazil, including food establishments. However, it does not provide [geocoded information](https://en.wikipedia.org/wiki/Address_geocoding), which is required for spatial analyses. This pipeline addresses that gap by processing and [geocoding](https://en.wikipedia.org/wiki/Address_geocoding) the data, and classifying establishments according to the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) scale.
 
 ## Data Availability
 
@@ -43,7 +45,7 @@ If you already have access to the OSF repository and the project keys, click [he
 The data used in this report come from the following sources:
 
 - Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)):
-  - Data on food retail establishments from the [CNPJ database](https://dados.gov.br/dados/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj), used for company identification.
+  - Data on legal entities from the National Register of Legal Entities ([CNPJ](https://en.wikipedia.org/wiki/CNPJ)) [database](https://dados.gov.br/dados/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj), used for company identification.
   - Data on [Brazilian agencies and municipalities](https://dados.gov.br/dados/conjuntos-dados/tabela-de-rgos-e-municpios) (_Tabela de Órgãos e Municípios_, TOM).
 - Brazilian Institute of Geography and Statistics ([IBGE](https://www.ibge.gov.br/)):
   - Municipality data via the [`geobr`](https://ipeagit.github.io/geobr/) R package.
@@ -71,7 +73,7 @@ The Tidyverse [code style guide](https://style.tidyverse.org/) and [design princ
 
 ### Reproducibility
 
-The pipeline is fully reproducible and can be run again at any time. To ensure consistent results, the [`renv`](https://rstudio.github.io/renv/) package [@usheya] is used to manage and restore the R environment. See the [README](https://github.com/cem-usp/rfb-cnpj-geocoding/blob/main/README.md) file in the code repository to learn how to run it.
+The pipeline is fully reproducible and can be run again at any time. To ensure consistent results, the [`renv`](https://rstudio.github.io/renv/) package [@usheya] is used to manage and restore the R environment. See the [README](https://github.com/cem-usp/locais-nova-rfb-geocoding/blob/main/README.md) file in the code repository to learn how to run it.
 
 ## Set the Environment
 
@@ -241,7 +243,7 @@ url <- "https://www.gov.br/receitafederal/dados/municipios.csv"
 curl_download(url, destfile = file.path(raw_data_dir, "municipios.csv"))
 ```
 
-## Download IBGE Municipalities Data
+## Download and Import IBGE Municipalities Data
 
 ::: {.callout-note}
 See the [Source of Data](#source-of-data) section for more information.
@@ -257,23 +259,11 @@ municipalities_data <- brazil_municipality(year = year)
 municipalities_data |> glimpse()
 ```
 
-## Download RFB CNPJ Data
+## Download RFB Data
 
 ::: {.callout-note}
 See the [Source of Data](#source-of-data) section for more information.
 :::
-
-### Clean Old Data Files
-
-```{r}
-#| label: Download the RFB Raw Data
-#| eval: false
-
-if (dir_exists(raw_data_dir)) {
-  dir_delete(raw_data_dir)
-  dir_create(raw_data_dir, recurse = TRUE)
-}
-```
 
 ### Download Files
 
@@ -309,12 +299,6 @@ urls |>
 #| eval: false
 
 urls |> download_file(dir = raw_data_dir)
-```
-
-```{r}
-#| include: false
-
-# beep()
 ```
 
 ### Unzip Files
@@ -419,11 +403,11 @@ establishment_data <-
             "';' ",
             "'{ ",
             "if (",
-            '$6 == "', '\\"02\\"', '"',
-            " && ",
+            '($6 == "', '\\"02\\"', '")',
+            " && (",
             paste0('$21 == "\\"', municipalities, '\\""', collapse = " || "),
-            " && ",
-            '$29 == "', '\\"\\"', '"',
+            ") && ",
+            '($29 == "', '\\"\\"', '")',
             ") ",
             "print",
             " }' ",
@@ -521,7 +505,7 @@ For more details on the Locais-Nova lookup table, see the [Source of Data](#sour
 establishment_data <-
   establishment_data |>
   mutate(cnae = str_pad(cnae_primary, 7, pad = "0")) |>
-  left_join(lookup_data, by = c("cnae", "federal_unit")) |>
+  left_join(lookup_data, by = join_by(cnae, federal_unit)) |>
   rename(
     locaisnova_g0 = g0,
     locaisnova_g1_g2 = g1_g2,
@@ -547,7 +531,7 @@ Some tidying operations are performed to ensure the data is in a suitable format
 establishment_data <-
   establishment_data |>
   mutate(municipality_code_tom = as.integer(municipality_code_tom)) |>
-  left_join(municipalities_tom_data, by = "municipality_code_tom") |>
+  left_join(municipalities_tom_data, by = join_by(municipality_code_tom)) |>
   rename(
     municipality_code = municipality_code_ibge,
     municipality = municipality_ibge,
@@ -555,7 +539,7 @@ establishment_data <-
   ) |>
   left_join(
     municipalities_data,
-    by = c("federal_unit", "municipality_code"),
+    by = join_by(federal_unit, municipality_code),
     suffix = c("", ".y")
   ) |>
   mutate(
@@ -1018,19 +1002,19 @@ When using this data, you must also cite the original data sources.
 
 To cite this work, please use the following format:
 
-Vartanian, D., Penz, C. L. S., Caldeira, G., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/rfb-cnpj-geocoding>
+Vartanian, D., Penz, C. L. S., Caldeira, G., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing, geocoding, and classifying CNPJs from the Brazilian Federal Revenue Service (RFB) using the Locais-Nova scale* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/locais-nova-rfb-geocoding>
 
 A BibLaTeX entry for LaTeX users is
 
 ```latex
 @software{vartanian2025,
-  title = {A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)},
+  title = {A reproducible pipeline for processing, geocoding, and classifying CNPJs from the Brazilian Federal Revenue Service (RFB) using the Locais-Nova scale},
   author = {{Daniel Vartanian} and {Clara de Lima e Silva Penz} and {Gabriel Caldeira} and {Camila Nastari Fernandes} and {Mariana Abrantes Giannotti}},
   year = {2025},
   address = {São Paulo},
   institution = {Center for Metropolitan Studies of the University of São Paulo},
   langid = {en},
-  url = {https://cem-usp.github.io/rfb-cnpj-geocoding}
+  url = {https://cem-usp.github.io/locais-nova-rfb-geocoding}
 }
 ```
 
@@ -1047,7 +1031,7 @@ The original data sources may be subject to their own licensing terms and condit
 
 The code in this repository is licensed under the [GNU General Public License Version 3](https://www.gnu.org/licenses/gpl-3.0), while the report is available under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
-``` text
+```
 Copyright (C) 2025 Center for Metropolitan Studies
 
 The code in this report is free software: you can redistribute it and/or

@@ -1,4 +1,4 @@
-# rfb-cnpj-geocoding
+# locais-nova-rfb-geocoding
 
 <!-- badges: start -->
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
@@ -11,9 +11,9 @@
 This repository provides a reproducible pipeline for processing, [geocoding](https://en.wikipedia.org/wiki/Address_geocoding), and classifying [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s from the Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)) using the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) scale.
 
 
-The report is available [here](https://cem-usp.github.io/rfb-cnpj-geocoding/).
+The report is available [here](https://cem-usp.github.io/locais-nova-rfb-geocoding/).
 
-> If you find this project useful, please consider giving it a star! [![GitHub repo stars](https://img.shields.io/github/stars/cem-usp/logo-pattern)](https://github.com/cem-usp/rfb-cnpj-geocoding/)
+> If you find this project useful, please consider giving it a star! [![GitHub repo stars](https://img.shields.io/github/stars/cem-usp/logo-pattern)](https://github.com/cem-usp/locais-nova-rfb-geocoding/)
 
 ## Data Availability
 
@@ -42,7 +42,7 @@ After installing the four dependencies mentioned above and setting all the keys,
 
 ## Keys
 
-To access the data and run the [Quarto](https://quarto.org/) notebook, you must first obtain authorization to access the project's [Google Sheets](https://workspace.google.com/products/sheets/) files.
+To access the data and run the [Quarto](https://quarto.org/) notebook, you must first obtain authorization to access the project's [OSF](https://osf.io) repositories and [Google Sheets](https://workspace.google.com/products/sheets/) files.
 
 Once you have the necessary permissions, run the following command to authorize your access to the Google Sheets API:
 
@@ -55,6 +55,25 @@ options(gargle_oauth_cache = ".secrets")
 gs4_auth()
 gargle_oauth_cache()
 ```
+
+Next, create a file named [`.Renviron`](https://bookdown.org/csgillespie/efficientR/set-up.html#:~:text=2.4.6%20The%20.Renviron%20file) in the root directory of the project and add the following environment variables:
+
+- `OSF_PAT`: Your [OSF](https://osf.io/) Personal Access Token ([PAT](https://en.wikipedia.org/wiki/Personal_access_token)). If you don't have one, go to the settings section of your OSF account and create a new token.
+- `ACESSOSAN_PASSWORD`: The password for the project's [RSA](https://en.wikipedia.org/wiki/RSA_cryptosystem) private key (32 bytes).
+
+Example (do not use these values):
+
+```ini
+OSF_PAT=bWHtQBmdeMvZXDv2R4twdNLjmakjLUZr4t72ouAbNjwycGtDzfm3gjz4ChYXwbBaBVJxJR
+ACESSOSAN_PASSWORD=MmXN_od_pe*RdHgfKTaKiXdV7KD2qPzW
+```
+
+Additionally, you will need the following keys in the project's [`_ssh`](_ssh) folder:
+
+- `id_rsa`: The project's private RSA key ([RSA](https://en.wikipedia.org/wiki/RSA_cryptosystem) 4096 bits (OpenSSL)).
+- `id_rsa.pub`: The project's public RSA key.
+
+These project's keys are provided to authorized personnel only. If you need access, please contact the authors.
 
 ## Known Issues
 
@@ -84,19 +103,19 @@ install.packages("arrow")
 
 To cite this work, please use the following format:
 
-Vartanian, D., Penz, C. L. S., Caldeira, G., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/rfb-cnpj-geocoding>
+Vartanian, D., Penz, C. L. S., Caldeira, G., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing, geocoding, and classifying CNPJs from the Brazilian Federal Revenue Service (RFB) using the Locais-Nova scale* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/locais-nova-rfb-geocoding>
 
 A BibLaTeX entry for LaTeX users is
 
 ```latex
 @software{vartanian2025,
-  title = {A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)},
+  title = {A reproducible pipeline for processing, geocoding, and classifying CNPJs from the Brazilian Federal Revenue Service (RFB) using the Locais-Nova scale},
   author = {{Daniel Vartanian} and {Clara de Lima e Silva Penz} and {Gabriel Caldeira} and {Camila Nastari Fernandes} and {Mariana Abrantes Giannotti}},
   year = {2025},
   address = {São Paulo},
   institution = {Center for Metropolitan Studies of the University of São Paulo},
   langid = {en},
-  url = {https://cem-usp.github.io/rfb-cnpj-geocoding}
+  url = {https://cem-usp.github.io/locais-nova-rfb-geocoding}
 }
 ```
 
@@ -110,7 +129,7 @@ A BibLaTeX entry for LaTeX users is
 
 The code in this repository is licensed under the [GNU General Public License Version 3](https://www.gnu.org/licenses/gpl-3.0), while the report is available under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
-``` text
+```
 Copyright (C) 2025 Center for Metropolitan Studies
 
 The code in this report is free software: you can redistribute it and/or

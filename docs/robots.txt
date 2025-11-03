@@ -1,1 +1,1 @@
-Sitemap: https://cem-usp.github.io/rfb-cnpj-geocoding/sitemap.xml
+Sitemap: https://cem-usp.github.io/locais-nova-rfb-geocoding/sitemap.xml
