@@ -22,7 +22,7 @@ This report provides reproducible pipeline for processing, [geocoding](https://e
 
 The [AcessoSAN](https://doi.org/10.17605/OSF.IO/ZE6WT) project aims to develop methods for measuring and analyzing inequities in access to healthy food in favelas and other urban communities. Achieving this requires a reliable and up-to-date database of food retail establishments.
 
-The Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)) [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s database lists companies operating in Brazil, including food retail establishments. However, it does not provide [geocoded information](https://en.wikipedia.org/wiki/Address_geocoding), which is required for spatial analyses. This pipeline addresses that gap by processing and [geocoding](https://en.wikipedia.org/wiki/Address_geocoding) the data, nd classifying establishments according to the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) scale.
+The Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)) [CNPJ](https://en.wikipedia.org/wiki/CNPJ)s database lists companies operating in Brazil, including food retail establishments. However, it does not provide [geocoded information](https://en.wikipedia.org/wiki/Address_geocoding), which is required for spatial analyses. This pipeline addresses that gap by processing and [geocoding](https://en.wikipedia.org/wiki/Address_geocoding) the data, and classifying establishments according to the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) scale.
 
 ## Data Availability
 
@@ -44,11 +44,11 @@ The data used in this report come from the following sources:
 
 - Brazilian Federal Revenue Service ([RFB](https://www.gov.br/receitafederal/)):
   - Data on food retail establishments from the [CNPJ database](https://dados.gov.br/dados/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj), used for company identification.
-  - Data on [Brazilian agencies and municipalities](https://dados.gov.br/dados/conjuntos-dados/tabela-de-rgos-e-municpios) (TOM).
+  - Data on [Brazilian agencies and municipalities](https://dados.gov.br/dados/conjuntos-dados/tabela-de-rgos-e-municpios) (_Tabela de Órgãos e Municípios_, TOM).
 - Brazilian Institute of Geography and Statistics ([IBGE](https://www.ibge.gov.br/)):
   - Municipality data via the [`geobr`](https://ipeagit.github.io/geobr/) R package.
   - Open spatial datasets of Brazilian addresses from the National Address Register for Statistical Purposes ([CNEFE](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)), used for geocoding via the [`geocodebr`](https://ipeagit.github.io/geocodebr/) R package.
-- Center for Metropolitan Studies ([CEM](https://centrodametropole.fflch.usp.br/)): Lookup table providing the classification linking the establishments CNAEs (National Classification of Economic Activities) to the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) groups. This data will remain private until further notice.
+- Center for Metropolitan Studies ([CEM](https://centrodametropole.fflch.usp.br/)): Lookup table providing the classification linking the establishments [CNAEs](https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/cnpj/classificacao-nacional-de-atividades-economicas-2013-cnae) (National Classification of Economic Activities) codes to the [Locais-Nova](https://doi.org/10.1590/S2237-96222025v34.20240361.en) groups. This data will remain private until further notice.
 
 ### Data Munging
 
@@ -75,6 +75,10 @@ The pipeline is fully reproducible and can be run again at any time. To ensure c
 
 ## Set the Environment
 
+::: {.callout-note}
+This section sets up the R environment needed for the workflow.
+:::
+
 ### Load Packages
 
 ```{r}
@@ -96,6 +100,7 @@ library(here)
 library(htmltools)
 library(labelled)
 library(lockr) # github.com/danielvartan/lockr
+library(lubridate)
 library(magrittr)
 library(nanoparquet)
 library(orbis) # github.com/danielvartan/orbis
@@ -112,6 +117,10 @@ library(zip)
 ```
 
 ### Set Keys
+
+::: {.callout-note}
+See the [Data Availability](#data-availability) section for more information.
+:::
 
 ```{r}
 #| output: false
@@ -152,8 +161,18 @@ for (i in c(raw_data_dir, data_dir)) {
 
 ### Set Initial Variables
 
+::: {.callout-note}
+These variables specify which consolidated RFB dataset to use and which municipalities to process.
+:::
+
 ```{r}
 set.seed(2025)
+```
+
+```{r}
+#| output: false
+
+set_en_us_locale()
 ```
 
 ```{r}
@@ -166,22 +185,26 @@ month <- 1
 
 ```{r}
 municipalities <- c( # IBGE Codes
-  3550308, # São Paulo
+  1721000, # Palmas
   2507507, # João Pessoa
   3106200, # Belo Horizonte
+  3550308, # São Paulo
   4314902, # Porto Alegre
-  1721000, # Palmas
-  5300108, # Brasília
-  5208707  # Goiânia
+  5208707, # Goiânia
+  5300108 # Brasília
 )
 ```
 
-## Download CNAE Classification Table
+## Download Locais-Nova CNAE Lookup Table
+
+::: {.callout-note}
+See the [Source of Data](#source-of-data) section for more information.
+:::
 
 ```{r}
-#| label: Download CNAE Classification Table
+#| label: Download Locais-Nova CNAE Lookup Table
 
-classification_data <-
+lookup_data <-
   read_sheet(
     ss = "1ipCw2FM3aUOdRd4w55J5SUEgXDCogxWZF-NZi0A-o_4",
     sheet = "Dataset"
@@ -196,13 +219,17 @@ classification_data <-
 ```
 
 ```{r}
-classification_data |> glimpse()
+lookup_data |> glimpse()
 ```
 
-## Download Data on Brazilian Agencies and Municipalities
+## Download Agencies and Municipalities (TOM) Data
+
+::: {.callout-note}
+See the [Source of Data](#source-of-data) section for more information.
+:::
 
 ```{r}
-#| label: Download Data on Brazilian Agencies and Municipalities
+#| label: Download Agencies and Municipalities (TOM) Data
 #| eval: false
 
 url <- "https://www.gov.br/receitafederal/dados/municipios.csv"
@@ -216,6 +243,10 @@ curl_download(url, destfile = file.path(raw_data_dir, "municipios.csv"))
 
 ## Download IBGE Municipalities Data
 
+::: {.callout-note}
+See the [Source of Data](#source-of-data) section for more information.
+:::
+
 ```{r}
 #| labels: Download IBGE Municipalities Data
 
@@ -227,6 +258,10 @@ municipalities_data |> glimpse()
 ```
 
 ## Download RFB CNPJ Data
+
+::: {.callout-note}
+See the [Source of Data](#source-of-data) section for more information.
+:::
 
 ### Clean Old Data Files
 
@@ -303,7 +338,11 @@ zip_files |> map(\(x) unzip(x, exdir = raw_data_dir), .progress = TRUE)
 zip_files |> file_delete()
 ```
 
-## Read TOM Municipality Codes
+## Import TOM Municipality Codes and Convert IBGE Codes
+
+::: {.callout-note}
+RFB data identifies municipalities using a different coding scheme (_Tabela de Órgãos e Municípios_, [TOM](https://dados.gov.br/dados/conjuntos-dados/tabela-de-rgos-e-municpios)) than IBGE codes. Mapping IBGE codes to the corresponding TOM codes is therefore required.
+:::
 
 ```{r}
 municipalities_tom_data <-
@@ -341,8 +380,6 @@ municipalities_tom_data <-
 municipalities_tom_data |> glimpse()
 ```
 
-## Replace IBGE Municipality Codes with TOM Codes
-
 ```{r}
 municipalities
 ```
@@ -358,7 +395,13 @@ municipalities <-
 municipalities
 ```
 
-## Read the Data
+## Import the Data
+
+::: {.callout-note}
+The [AWK](https://www.gnu.org/software/gawk/) programming language and the [vroom](https://vroom.r-lib.org/) R package are used to read and filter the data efficiently, without loading it entirely into memory.
+
+Only establishments with an *Active* registration status (`$6 == "02"`) and no special status (`$29 == ""`) are included. The data is further filtered by municipality (`$21 == municipalities`).
+:::
 
 ```{r}
 #| label: Read the Data
@@ -369,8 +412,6 @@ establishment_data <-
   map(
     function(x) {
       vroom(
-        # Uses `pipe()` and `awk` to filter data to avoid loading the
-        # entire file into memory.
         file = pipe(
           paste0(
             "awk ",
@@ -425,12 +466,14 @@ establishment_data <-
         col_types = cols(.default = "c"),
         col_select = c(
           "cnpj_basic", "cnpj_order", "cnpj_dv", "cnae_primary",
+          "registration_status_date",
           "federal_unit", "municipality_code_tom", "street_type",
           "street_name", "number", "address_complement", "neighborhood",
           "postal_code"
         ),
         show_col_types = FALSE
-      )
+      ) |>
+        distinct(cnpj_basic, cnpj_order, cnpj_dv, .keep_all = TRUE)
     },
     .progress = TRUE
   ) |>
@@ -441,7 +484,36 @@ establishment_data <-
 establishment_data |> glimpse()
 ```
 
+## Visualize Registration Status Dates
+
+::: {.callout-note}
+These dates indicate when establishments were registered as *Active*.
+:::
+
+```{r}
+establishment_data |>
+  mutate(
+    registration_status_date = ymd(registration_status_date)
+  ) |>
+  ggplot(aes(x = registration_status_date)) +
+  geom_histogram(
+    bins = 30,
+    fill = get_brand_color("blue")
+  ) +
+  scale_fill_brand_d() +
+  labs(
+    x = "Registration Status Date",
+    y = "Frequency"
+  )
+```
+
 ## Filter the Data
+
+::: {.callout-note}
+The Locais-Nova lookup table is used to filter establishment data and classify establishments into the scale groups.
+
+For more details on the Locais-Nova lookup table, see the [Source of Data](#source-of-data) section.
+:::
 
 ```{r}
 #| label: Filter the Data
@@ -449,8 +521,14 @@ establishment_data |> glimpse()
 establishment_data <-
   establishment_data |>
   mutate(cnae = str_pad(cnae_primary, 7, pad = "0")) |>
-  left_join(classification_data, by = c("cnae", "federal_unit")) |>
-  drop_na(g0, g1_g2, g3, g4)
+  left_join(lookup_data, by = c("cnae", "federal_unit")) |>
+  rename(
+    locaisnova_g0 = g0,
+    locaisnova_g1_g2 = g1_g2,
+    locaisnova_g3 = g3,
+    locaisnova_g4 = g4
+  ) |>
+  drop_na(locaisnova_g0, locaisnova_g1_g2, locaisnova_g3, locaisnova_g4)
 ```
 
 ```{r}
@@ -458,6 +536,10 @@ establishment_data |> glimpse()
 ```
 
 ## Tidy the Data
+
+::: {.callout-note}
+Some tidying operations are performed to ensure the data is in a suitable format for analysis.
+:::
 
 ```{r}
 #| label: Tidy the Data
@@ -523,7 +605,7 @@ establishment_data <-
     region_code, region, state_code, state, federal_unit,
     municipality_code, municipality,
     address, number, complement, neighborhood, postal_code,
-    g0, g1_g2, g3, g4
+    locaisnova_g0, locaisnova_g1_g2, locaisnova_g3, locaisnova_g4
   ) |>
   mutate(
     across(
@@ -543,12 +625,16 @@ establishment_data |> glimpse()
 
 ## Arrange the Data
 
+::: {.callout-note}
+The data is arranged by municipality code and [CNAE](https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/cnpj/classificacao-nacional-de-atividades-economicas-2013-cnae).
+:::
+
 ```{r}
 #| label: Arrange the Data
 
 establishment_data <-
   establishment_data |>
-  arrange(federal_unit, municipality, cnae)
+  arrange(municipality_code, cnae)
 ```
 
 ```{r}
@@ -556,6 +642,10 @@ establishment_data |> glimpse()
 ```
 
 ## Geocode the Data
+
+::: {.callout-note}
+Geocoding is performed with the [`geocodebr`](https://ipeagit.github.io/geocodebr/) R package, which relies on open spatial data from the Brazilian Institute of Geography and Statistics ([IBGE](https://www.ibge.gov.br/)). The package uses address information from the National Address Register for Statistical Purposes ([CNEFE](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)).
+:::
 
 ```{r}
 #| label: Geocode the Data
@@ -596,7 +686,10 @@ establishment_data <-
     geocodebr_address_found = endereco_encontrado,
     geocodebr_ambiguous = empate
   ) |>
-  relocate(g0, g1_g2, g3, g4, .after = geocodebr_ambiguous) |>
+  relocate(
+    locaisnova_g0, locaisnova_g1_g2, locaisnova_g3, locaisnova_g4,
+    .after = geocodebr_ambiguous
+  ) |>
   drop_na(all_of(c("latitude", "longitude")))
 ```
 
@@ -629,15 +722,15 @@ metadata <-
       postal_code = "Postal code",
       latitude = "Latitude",
       longitude = "Longitude",
-      geocodebr_precision = "Precision value from geocodebr",
-      geocodebr_type_of_result = "Result type from geocodebr",
-      geocodebr_deviation_meters = "Deviation (meters) from geocodebr",
-      geocodebr_address_found = "Address returned by geocodebr",
-      geocodebr_ambiguous = "Ambiguous result from geocodebr",
-      g0 = "Locais-Nova Group 0",
-      g1_g2 = "Locais-Nova Groups 1 and 2",
-      g3 = "Locais-Nova Group 3",
-      g4 = "Locais-Nova Group 4"
+      geocodebr_precision = "{geocodebr} precision value",
+      geocodebr_type_of_result = "{geocodebr} result type",
+      geocodebr_deviation_meters = "{geocodebr} deviation (meters)",
+      geocodebr_address_found = "{geocodebr} address returned",
+      geocodebr_ambiguous = "{geocodebr} ambiguous result",
+      locaisnova_g0 = "Locais-Nova Group 0 indicator",
+      locaisnova_g1_g2 = "Locais-Nova Groups 1 and 2 indicator",
+      locaisnova_g3 = "Locais-Nova Group 3 indicator",
+      locaisnova_g4 = "Locais-Nova Group 4 indicator"
     )
   ) |>
   generate_dictionary(details = "full") |>
@@ -654,6 +747,10 @@ establishment_data
 
 ## Save the Valid Data
 
+::: {.callout-note}
+The processed data are available in [`csv`](https://en.wikipedia.org/wiki/Comma-separated_values), [`rds`](https://rdrr.io/r/base/readRDS.html) and [`parquet`](https://en.wikipedia.org/wiki/Apache_Parquet) formats through a dedicated repository on the Open Science Framework ([OSF](https://osf.io/)). See the [Data Availability](#data-availability) section for more information.
+:::
+
 ### Clean Old Data Files
 
 ```{r}
@@ -669,7 +766,6 @@ if (dir_exists(data_dir)) {
 
 ```{r}
 valid_file_pattern <- paste0(
-  "valid-",
   year,
   "-",
   str_pad(month, width = 2, pad = "0")
@@ -692,7 +788,7 @@ establishment_data |>
 
 ```{r}
 establishment_data |>
-  nanoparquet::write_parquet(
+  write_parquet(
     here(data_dir, paste0(valid_file_pattern, ".parquet"))
   )
 ```
@@ -700,6 +796,8 @@ establishment_data |>
 ### Lock Data
 
 ```{r}
+#| output: false
+
 here(data_dir, paste0(valid_file_pattern, ".csv")) |>
   lock_file(
     public_key = public_key,
@@ -709,6 +807,8 @@ here(data_dir, paste0(valid_file_pattern, ".csv")) |>
 ```
 
 ```{r}
+#| output: false
+
 here(data_dir, paste0(valid_file_pattern, ".rds")) |>
   lock_file(
     public_key = public_key,
@@ -718,6 +818,8 @@ here(data_dir, paste0(valid_file_pattern, ".rds")) |>
 ```
 
 ```{r}
+#| output: false
+
 here(data_dir, paste0(valid_file_pattern, ".parquet")) |>
   lock_file(
     public_key = public_key,
@@ -730,10 +832,11 @@ here(data_dir, paste0(valid_file_pattern, ".parquet")) |>
 
 ```{r}
 metadata_file_pattern <- paste0(
-  "metadata-",
   year,
   "-",
-  str_pad(month, width = 2, pad = "0")
+  str_pad(month, width = 2, pad = "0"),
+  "-",
+  "metadata"
 )
 ```
 
@@ -777,6 +880,7 @@ osf_upload(
 ```{r}
 #| eval: false
 #| include: false
+#| output: false
 
 here(data_dir, paste0(valid_file_pattern, ".rds.lockr")) |>
   unlock_file(
@@ -800,84 +904,110 @@ establishment_data <-
 
 ## Visualize the Data
 
-### Set Variables
+### Convert all TOM codes to their equivalent IBGE codes
+
+```{r}
+municipalities <-
+  municipalities_tom_data |>
+  filter(municipality_code_tom %in% municipalities) |>
+  pull(municipality_code_ibge) |>
+  sort()
+```
+
+### Plot the Data
 
 ```{r}
 #| label: Visualize the Data
-
-plot_municipality <- 3550308 # São Paulo
-```
-
-### Set Shape
-
-```{r}
-shape <-
-  plot_municipality |>
-  read_municipality(year = closest_geobr_year(year)) |>
-  st_transform(st_crs(4326))
-```
-
-### Prepare Data
-
-```{r}
-plot_data <-
-  establishment_data |>
-  filter(municipality_code == plot_municipality) |>
-  pivot_longer(
-    cols = all_of(c("g0", "g1_g2", "g3", "g4")),
-    names_to = "group",
-    values_to = "value"
-  ) |>
-  filter(value == TRUE) |>
-  st_as_sf(
-    coords = c("longitude", "latitude"),
-    crs = 4326
-  ) |>
-  st_join(shape, join = st_within, left = FALSE) %>%
-  mutate(
-    latitude = st_coordinates(.)[,2],
-    longitude = st_coordinates(.)[,1]
-  ) |>
-  st_drop_geometry() |>
-  transmute(
-    group =
-      group |>
-      str_to_upper() |>
-      str_replace("_", "-"),
-    latitude,
-    longitude
-  )
-```
-
-```{r}
-plot_data |> glimpse()
-```
-
-### Plot Data
-
-```{r}
-#| label: Test Plot
 #| fig-width: 10
-#| fig-height: 4
+#| fig-height: 6
 
-ggplot() +
-  geom_sf(
-    data = shape,
-    fill = "gray90",
-    color = "black"
-  ) +
-  geom_point(
-    data = plot_data,
-    mapping = aes(x = longitude, y = latitude, color = group),
-    size = 0.01
-  ) +
-  facet_wrap(~ group, ncol = 4) +
-  coord_sf(crs = 4326) +
-  scale_x_continuous(labels = NULL, breaks = NULL) +
-  scale_y_continuous(labels = NULL, breaks = NULL) +
-  scale_colour_brand_d() +
-  theme(legend.position = "none") +
-  labs(x = NULL, y = NULL, color = NULL)
+for (i in municipalities) {
+  # Set Shape -----
+
+  shape <-
+    i |>
+    read_municipality(
+      year = closest_geobr_year(year, verbose = FALSE),
+      showProgress = FALSE
+    ) |>
+    st_transform(st_crs(4326)) |>
+    suppressMessages()
+
+  # Prepare Data -----
+
+  plot_data <-
+    establishment_data |>
+    filter(municipality_code == i) |>
+    pivot_longer(
+      cols = all_of(
+        c("locaisnova_g0", "locaisnova_g1_g2", "locaisnova_g3", "locaisnova_g4")
+      ),
+      names_to = "group",
+      values_to = "value"
+    ) |>
+    filter(value == TRUE) |>
+    st_as_sf(
+      coords = c("longitude", "latitude"),
+      crs = 4326
+    ) |>
+    st_join(shape, join = st_within, left = FALSE) %>%
+    mutate(
+      latitude = st_coordinates(.)[,2],
+      longitude = st_coordinates(.)[,1]
+    ) |>
+    st_drop_geometry() |>
+    transmute(
+      group =
+        group |>
+        str_remove("locaisnova_") |>
+        str_to_upper() |>
+        str_replace("_", "-"),
+      latitude,
+      longitude
+    )
+
+  # Plot Data ---
+
+  plot <-
+    ggplot() +
+    geom_sf(
+      data = shape,
+      fill = "gray90",
+      color = "black"
+    ) +
+    geom_point(
+      data = plot_data,
+      mapping = aes(x = longitude, y = latitude, color = group),
+      size = 0.01
+    ) +
+    facet_wrap(~ group, ncol = 4) +
+    coord_sf(crs = 4326) +
+    scale_x_continuous(labels = NULL, breaks = NULL) +
+    scale_y_continuous(labels = NULL, breaks = NULL) +
+    scale_colour_brand_d() +
+    theme(legend.position = "none") +
+    labs(
+      title = paste(
+        "Locais-Nova Establishments in",
+        municipalities_data |>
+          filter(municipality_code == i) |>
+          pull(municipality)
+      ),
+      x = NULL,
+      y = NULL,
+      color = NULL,
+      caption =
+        paste0(
+          "Source: ",
+          "Brazilian Federal Revenue Service (RFB), as of ",
+          month.name[month], " ",
+          year,
+          "."
+        )
+    )
+
+  print(plot)
+}
 ```
 
 ## Citation
@@ -890,7 +1020,7 @@ To cite this work, please use the following format:
 
 Vartanian, D., Penz, C. L. S., Caldeira, G., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/rfb-cnpj-geocoding>
 
-A BibTeX entry for LaTeX users is
+A BibLaTeX entry for LaTeX users is
 
 ```latex
 @software{vartanian2025,

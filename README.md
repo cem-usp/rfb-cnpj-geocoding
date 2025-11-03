@@ -86,7 +86,7 @@ To cite this work, please use the following format:
 
 Vartanian, D., Penz, C. L. S., Caldeira, G., Fernandes, C. N., & Giannotti, M. A. (2025). *A reproducible pipeline for processing and geocoding CNPJs from the Brazilian Federal Revenue Service (RFB)* \[Computer software\]. Center for Metropolitan Studies of the University of São Paulo. <https://cem-usp.github.io/rfb-cnpj-geocoding>
 
-A BibTeX entry for LaTeX users is
+A BibLaTeX entry for LaTeX users is
 
 ```latex
 @software{vartanian2025,

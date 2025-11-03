@@ -72,8 +72,11 @@
     "knitr",
     "langid",
     "lapply",
+    "LIBARROW",
     "lightbox",
+    "locaisnova",
     "lockr",
+    "lubridate",
     "magrittr",
     "montserrat",
     "MOTICSV",
@@ -110,6 +113,7 @@
     "rvest",
     "scipen",
     "SESAN",
+    "setenv",
     "showtext",
     "SOCIOCSV",
     "stringr",
@@ -124,6 +128,7 @@
     "Vartanian",
     "wickham",
     "wmoldham",
-    "Zotero"
+    "Zotero",
+    "zstd"
   ]
 }
